@@ -166,7 +166,7 @@ public class OrderService implements IOrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(String search, OrderStatus status, Pageable pageable) {
-        String cleanSearch = (search == null || search.trim().isEmpty()) ? null : search.trim();
+        String cleanSearch = (search == null || search.trim().isEmpty()) ? "" : search.trim();
         return orderRepository.searchOrders(cleanSearch, status, pageable).map(this::mapToOrderResponse);
     }
 
