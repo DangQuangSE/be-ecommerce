@@ -56,6 +56,7 @@ public class SecurityConfig {
                 "/v3/api-docs/**",
                 "/v3/api-docs.yaml",
                 "/api/auth/**",
+                "/api/forgot-password/**",
                 "/api/categories/**",
                 "/api/brands/**",
                 "/api/colors/**",
