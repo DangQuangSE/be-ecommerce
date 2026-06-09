@@ -35,6 +35,7 @@ public class AuthConstant {
     public static final String LOGIN_SUCCESS = "Login successful";
     public static final String TOKEN_REFRESHED = "Token refreshed successfully";
     public static final String USER_DETAILS_RETRIEVED = "User details retrieved successfully";
+    public static final String USER_UNAUTHORIZED = "User is not authenticated";
     public static final String OTP_VERIFIED_SUCCESS = "OTP verified successfully";
 
     // Validation Messages

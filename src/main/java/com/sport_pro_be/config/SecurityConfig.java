@@ -93,6 +93,7 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5000", "http://127.0.0.1:5000", "http://localhost:8085", "http://127.0.0.1:8085"));
                 List<String> origins = Arrays.stream(frontendUrl.split(","))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())

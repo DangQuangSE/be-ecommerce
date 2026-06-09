@@ -87,6 +87,9 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<Map<String, Object>> me() {
         User user = com.sport_pro_be.common.SecurityUtils.getCurrentUser();
+        if (user == null) {
+            throw new com.sport_pro_be.exception.UnauthorizedException(USER_UNAUTHORIZED);
+        }
         Map<String, Object> data = Map.of(
                 "email", user.getEmail(),
                 "role", user.getRole().name(),
