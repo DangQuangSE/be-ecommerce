@@ -24,7 +24,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.beans.factory.annotation.Value;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -42,6 +45,8 @@ import java.util.List;
 )
 public class SecurityConfig {
 
+
+
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
         private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -51,6 +56,7 @@ public class SecurityConfig {
                 "/v3/api-docs/**",
                 "/v3/api-docs.yaml",
                 "/api/auth/**",
+                "/api/forgot-password/**",
                 "/api/categories/**",
                 "/api/brands/**",
                 "/api/colors/**",
@@ -81,12 +87,20 @@ public class SecurityConfig {
                 return http.build();
         }
 
+        @Value("${FRONTEND_URL:http://localhost:3000}")
+        private String frontendUrl;
+
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5000", "http://127.0.0.1:5000", "http://localhost:8085", "http://127.0.0.1:8085"));
+                List<String> origins = Arrays.stream(frontendUrl.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+                configuration.setAllowedOrigins(origins);
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
+                configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "Accept-Language"));
                 configuration.setAllowCredentials(true);
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);

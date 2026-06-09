@@ -18,11 +18,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"items", "items.productVariant", "items.productVariant.product"})
     Optional<Order> findByIdAndUserId(Long id, Long userId);
 
-    @EntityGraph(attributePaths = {"items", "items.productVariant", "items.productVariant.product"})
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.customDesign"
+    })
     @org.springframework.data.jpa.repository.Query(
         "SELECT o FROM Order o WHERE " +
         "(:status IS NULL OR o.status = :status) AND " +
-        "(:search IS NULL OR o.phoneNumber LIKE %:search% OR CAST(o.id AS string) LIKE %:search% OR o.shippingAddress LIKE %:search%)"
+        "(:search = '' OR o.phoneNumber LIKE CONCAT('%', :search, '%') " +
+        "OR CAST(o.id AS string) LIKE CONCAT('%', :search, '%') " +
+        "OR o.shippingAddress LIKE CONCAT('%', :search, '%'))"
     )
     Page<Order> searchOrders(
             @org.springframework.data.repository.query.Param("search") String search,
