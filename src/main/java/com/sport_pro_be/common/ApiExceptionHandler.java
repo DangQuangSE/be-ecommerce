@@ -3,6 +3,7 @@ package com.sport_pro_be.common;
 import com.sport_pro_be.constant.ApiExceptionConstant;
 import com.sport_pro_be.exception.AppException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -41,6 +42,14 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
         return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePropertyReference(PropertyReferenceException ex) {
+        String message = ApiExceptionConstant.INVALID_SORT_PARAMETER + ": " + ex.getPropertyName();
+        log.warn("Invalid sort property: {}", ex.getPropertyName());
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(message, null, Instant.now()));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

@@ -15,6 +15,7 @@ import com.sport_pro_be.modules.order.dto.OrderItemResponse;
 import com.sport_pro_be.modules.order.dto.OrderRequest;
 import com.sport_pro_be.modules.order.dto.OrderResponse;
 import com.sport_pro_be.modules.order.enums.OrderStatus;
+import com.sport_pro_be.modules.order.enums.PaymentMethod;
 import com.sport_pro_be.modules.order.interfaces.IOrderService;
 import com.sport_pro_be.modules.order.repository.OrderItemRepository;
 import com.sport_pro_be.modules.order.repository.OrderRepository;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,6 +76,9 @@ public class OrderService implements IOrderService {
             itemsToOrder = new ArrayList<>(cart.getItems());
         }
 
+        // BANK_TRANSFER = VNPay online transfer (defer stock/cart until IPN success)
+        boolean deferFulfillment = request.getPaymentMethod() == PaymentMethod.BANK_TRANSFER;
+
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
@@ -98,9 +103,10 @@ public class OrderService implements IOrderService {
                         variant.getProduct().getName(), variant.getSize()));
             }
 
-            // Deduct stock
-            variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
-            productVariantRepository.save(variant);
+            if (!deferFulfillment) {
+                variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
+                productVariantRepository.save(variant);
+            }
 
             // Determine product price
             BigDecimal itemPrice = variant.getSalePrice() != null ? variant.getSalePrice() : variant.getOriginalPrice();
@@ -133,7 +139,9 @@ public class OrderService implements IOrderService {
                     .validateAndGetCoupon(request.getCouponCode(), user, totalAmount);
             discountAmount = couponService.calculateDiscount(coupon, totalAmount);
             order.setCoupon(coupon);
-            coupon.setUsedCount(coupon.getUsedCount() + 1);
+            if (!deferFulfillment) {
+                coupon.setUsedCount(coupon.getUsedCount() + 1);
+            }
         }
 
         order.setDiscountAmount(discountAmount);
@@ -141,9 +149,10 @@ public class OrderService implements IOrderService {
         order.setItems(orderItems);
         orderRepository.save(order);
 
-        // Clear only ordered items from cart
-        cart.getItems().removeAll(itemsToOrder);
-        cartRepository.save(cart);
+        if (!deferFulfillment) {
+            cart.getItems().removeAll(itemsToOrder);
+            cartRepository.save(cart);
+        }
 
         return mapToOrderResponse(order);
     }
@@ -198,6 +207,53 @@ public class OrderService implements IOrderService {
         return mapToOrderResponse(order);
     }
 
+    @Override
+    @Transactional
+    public void fulfillOrder(Long orderId) {
+        Order order = orderRepository.findFulfillmentGraphById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
+
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            return;
+        }
+
+        Cart cart = cartRepository.findByUserId(order.getUser().getId()).orElse(null);
+
+        for (OrderItem orderItem : order.getItems()) {
+            ProductVariant variant = orderItem.getProductVariant();
+            int newStock = variant.getStockQuantity() - orderItem.getQuantity();
+            if (newStock < 0) {
+                throw new BadRequestException(String.format(OrderMessageConstant.INSUFFICIENT_STOCK,
+                        variant.getProduct().getName(), variant.getSize()));
+            }
+            variant.setStockQuantity(newStock);
+            productVariantRepository.save(variant);
+
+            if (cart != null && cart.getItems() != null) {
+                Long orderDesignId = orderItem.getCustomDesign() != null
+                        ? orderItem.getCustomDesign().getId()
+                        : null;
+                cart.getItems().removeIf(cartItem -> {
+                    Long cartDesignId = cartItem.getCustomDesign() != null
+                            ? cartItem.getCustomDesign().getId()
+                            : null;
+                    return cartItem.getProductVariant().getId().equals(variant.getId())
+                            && Objects.equals(cartDesignId, orderDesignId)
+                            && cartItem.getQuantity().equals(orderItem.getQuantity());
+                });
+            }
+        }
+
+        if (cart != null) {
+            cartRepository.save(cart);
+        }
+
+        if (order.getCoupon() != null) {
+            com.sport_pro_be.modules.coupon.domain.Coupon coupon = order.getCoupon();
+            coupon.setUsedCount(coupon.getUsedCount() + 1);
+        }
+    }
+
     private OrderResponse mapToOrderResponse(Order order) {
         List<OrderItemResponse> itemResponses = order.getItems().stream()
                 .map(item -> {
@@ -241,6 +297,7 @@ public class OrderService implements IOrderService {
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())
+                .vnpTxnRef(order.getVnpTxnRef())
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();

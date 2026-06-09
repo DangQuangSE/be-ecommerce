@@ -22,6 +22,26 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "items",
             "items.productVariant",
             "items.productVariant.product",
+            "items.customDesign",
+            "user",
+            "coupon"
+    })
+    Optional<Order> findByVnpTxnRef(String vnpTxnRef);
+
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.customDesign",
+            "user",
+            "coupon"
+    })
+    Optional<Order> findFulfillmentGraphById(Long id);
+
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
             "items.customDesign"
     })
     @org.springframework.data.jpa.repository.Query(

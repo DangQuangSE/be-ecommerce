@@ -39,6 +39,11 @@ public class SportProBeApplication {
 			setIfPresent("CLOUDINARY_CLOUD_NAME", dotenv.get("CLOUDINARY_CLOUD_NAME"));
 			setIfPresent("CLOUDINARY_API_KEY", dotenv.get("CLOUDINARY_API_KEY"));
 			setIfPresent("CLOUDINARY_API_SECRET", dotenv.get("CLOUDINARY_API_SECRET"));
+			setIfPresent("VNPAY_TMN_CODE", dotenv.get("VNPAY_TMN_CODE"));
+			setIfPresent("VNPAY_HASH_SECRET", dotenv.get("VNPAY_HASH_SECRET"));
+			setIfPresent("VNPAY_PAY_URL", dotenv.get("VNPAY_PAY_URL"));
+			setIfPresent("VNPAY_RETURN_URL", dotenv.get("VNPAY_RETURN_URL"));
+			setIfPresent("VNPAY_IPN_URL", dotenv.get("VNPAY_IPN_URL"));
 		}
 		SpringApplication.run(SportProBeApplication.class, args);
 	}

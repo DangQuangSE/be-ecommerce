@@ -13,4 +13,6 @@ public interface IOrderService {
     Page<OrderResponse> getAllOrders(String search, OrderStatus status, Pageable pageable);
     OrderResponse getOrderDetailsAdmin(Long orderId);
     OrderResponse updateOrderStatus(Long orderId, OrderStatus status);
+
+    void fulfillOrder(Long orderId);
 }
