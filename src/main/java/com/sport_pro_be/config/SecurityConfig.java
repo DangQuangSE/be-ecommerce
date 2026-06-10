@@ -63,7 +63,7 @@ public class SecurityConfig {
                 "/api/products/**",
                 "/api/public/**",
                 "/api/v1/payments/vnpay/ipn",
-                "/api/v1/payments/vnpay/bridge-return"
+                "/api/v1/payments/vnpay/bridge-return",
                 "/ws/**"
         };
 
