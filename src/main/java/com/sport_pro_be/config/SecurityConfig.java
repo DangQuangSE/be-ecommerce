@@ -61,7 +61,8 @@ public class SecurityConfig {
                 "/api/brands/**",
                 "/api/colors/**",
                 "/api/products/**",
-                "/api/public/**"
+                "/api/public/**",
+                "/ws/**"
         };
 
         private static final String[] ADMIN_URLS = {
