@@ -64,6 +64,7 @@ public class SecurityConfig {
                 "/api/public/**",
                 "/api/v1/payments/vnpay/ipn",
                 "/api/v1/payments/vnpay/bridge-return"
+                "/ws/**"
         };
 
         private static final String[] ADMIN_URLS = {
