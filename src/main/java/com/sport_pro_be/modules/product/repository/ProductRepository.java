@@ -24,6 +24,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
            "WHERE p.slug = :slug")
     Optional<Product> findBySlugWithAssociations(@Param("slug") String slug);
 
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.slug = :slug OR p.slug LIKE CONCAT(:slug, '-%')")
+    // Native query bypasses @SQLRestriction so soft-deleted slugs are still counted,
+    // preventing reuse of a slug that belongs to a DELETED product.
+    @Query(value = "SELECT COUNT(*) FROM products WHERE slug = :slug OR slug LIKE CONCAT(:slug, '-%')", nativeQuery = true)
     long countBySlugPattern(@Param("slug") String slug);
 }
