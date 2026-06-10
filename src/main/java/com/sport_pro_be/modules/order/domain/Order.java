@@ -57,6 +57,9 @@ public class Order extends AbstractAuditingEntity {
     @Column(name = "discount_amount", precision = 15, scale = 2)
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Column(name = "vnp_txn_ref", length = 64)
+    private String vnpTxnRef;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

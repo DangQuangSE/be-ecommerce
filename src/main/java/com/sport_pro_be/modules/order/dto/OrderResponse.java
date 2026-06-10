@@ -18,6 +18,7 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
+    private String vnpTxnRef;
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
 }

@@ -62,6 +62,8 @@ public class SecurityConfig {
                 "/api/colors/**",
                 "/api/products/**",
                 "/api/public/**",
+                "/api/v1/payments/vnpay/ipn",
+                "/api/v1/payments/vnpay/bridge-return"
                 "/ws/**"
         };
 
