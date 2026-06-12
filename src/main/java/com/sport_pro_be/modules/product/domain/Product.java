@@ -2,14 +2,13 @@ package com.sport_pro_be.modules.product.domain;
 
 import com.sport_pro_be.modules.brand.domain.Brand;
 import com.sport_pro_be.modules.category.domain.Category;
+import com.sport_pro_be.modules.size.domain.SizeGroup;
 import com.sport_pro_be.common.AbstractAuditingEntity;
 import com.sport_pro_be.modules.product.enums.Gender;
 import com.sport_pro_be.modules.product.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +20,7 @@ import java.util.List;
         @Index(name = "idx_product_status", columnList = "status"),
         @Index(name = "idx_product_gender", columnList = "gender"),
         @Index(name = "idx_product_slug", columnList = "slug"),
+        @Index(name = "idx_product_size_group_id", columnList = "size_group_id"),
         @Index(name = "idx_product_filter", columnList = "category_id, brand_id, gender, status")
 })
 @Getter
@@ -28,8 +28,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE products SET status = 'DELETED' WHERE id = ?")
-@SQLRestriction("status <> 'DELETED'")
 public class Product extends AbstractAuditingEntity {
 
     @Id
@@ -52,6 +50,10 @@ public class Product extends AbstractAuditingEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "size_group_id")
+    private SizeGroup sizeGroup;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

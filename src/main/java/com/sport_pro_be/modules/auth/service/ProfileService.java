@@ -4,6 +4,7 @@ import com.sport_pro_be.exception.ResourceNotFoundException;
 import com.sport_pro_be.modules.auth.domain.User;
 import com.sport_pro_be.modules.auth.dto.UpdateProfileRequest;
 import com.sport_pro_be.modules.auth.dto.UserProfileResponse;
+import com.sport_pro_be.modules.auth.enums.Role;
 import com.sport_pro_be.modules.auth.interfaces.IProfileService;
 import com.sport_pro_be.modules.auth.repository.UserRepository;
 import com.sport_pro_be.modules.upload.service.CloudinaryUploadService;
@@ -64,6 +65,38 @@ public class ProfileService implements IProfileService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    @Loggable(action = "UPDATE_USER_ROLE", module = "AUTH")
+    public UserProfileResponse updateUserRole(Long userId, Role role) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setRole(role);
+        user = userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    @Override
+    @Transactional
+    @Loggable(action = "SET_USER_ACTIVE", module = "AUTH")
+    public UserProfileResponse setUserActive(Long userId, boolean active) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActive(active);
+        user = userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    @Override
+    @Transactional
+    @Loggable(action = "DELETE_USER", module = "AUTH")
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
     private UserProfileResponse mapToResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -74,6 +107,7 @@ public class ProfileService implements IProfileService {
                 .role(user.getRole().name())
                 .tier(user.getTier().name())
                 .totalSpending(user.getTotalSpending())
+                .isActive(user.isActive())
                 .build();
     }
 }

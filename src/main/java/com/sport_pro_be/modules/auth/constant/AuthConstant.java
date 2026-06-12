@@ -19,6 +19,7 @@ public class AuthConstant {
     public static final String OTP_LOCKED_TOO_MANY_ATTEMPTS = "OTP has been locked due to too many incorrect attempts";
     public static final String OTP_REQUEST_TOO_FREQUENT = "You are requesting OTP too frequently. Please try again in a few seconds";
     public static final String ACCOUNT_NOT_FOUND = "Account not found";
+    public static final String ACCOUNT_DELETED = "Account is disabled";
     public static final String ACCOUNT_ALREADY_VERIFIED = "Account is already verified";
     public static final String REFRESH_TOKEN_REQUIRED = "Refresh token is required";
     public static final String REFRESH_TOKEN_INVALID_OR_EXPIRED = "Refresh token is invalid or expired";

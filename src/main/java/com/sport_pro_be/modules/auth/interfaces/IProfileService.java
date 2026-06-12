@@ -2,6 +2,7 @@ package com.sport_pro_be.modules.auth.interfaces;
 
 import com.sport_pro_be.modules.auth.dto.UpdateProfileRequest;
 import com.sport_pro_be.modules.auth.dto.UserProfileResponse;
+import com.sport_pro_be.modules.auth.enums.Role;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface IProfileService {
@@ -9,4 +10,7 @@ public interface IProfileService {
     UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request);
     UserProfileResponse updateAvatar(Long userId, MultipartFile file);
     java.util.List<UserProfileResponse> getAllProfiles();
+    UserProfileResponse updateUserRole(Long userId, Role role);
+    UserProfileResponse setUserActive(Long userId, boolean active);
+    void deleteUser(Long userId);
 }

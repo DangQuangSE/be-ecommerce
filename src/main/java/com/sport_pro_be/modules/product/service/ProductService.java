@@ -4,6 +4,8 @@ import com.sport_pro_be.modules.brand.domain.Brand;
 import com.sport_pro_be.modules.brand.repository.BrandRepository;
 import com.sport_pro_be.modules.category.domain.Category;
 import com.sport_pro_be.modules.category.repository.CategoryRepository;
+import com.sport_pro_be.modules.size.domain.SizeGroup;
+import com.sport_pro_be.modules.size.repository.SizeGroupRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import com.sport_pro_be.common.SlugUtils;
@@ -45,6 +47,7 @@ public class ProductService implements IProductService {
         private final ProductRepository productRepository;
         private final CategoryRepository categoryRepository;
         private final BrandRepository brandRepository;
+        private final SizeGroupRepository sizeGroupRepository;
 
         @Override
         @Transactional
@@ -58,6 +61,12 @@ public class ProductService implements IProductService {
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 ProductMessageConstant.BRAND_NOT_FOUND));
 
+                SizeGroup sizeGroup = null;
+                if (request.getSizeGroupId() != null) {
+                        sizeGroup = sizeGroupRepository.findById(request.getSizeGroupId())
+                                        .orElseThrow(() -> new ResourceNotFoundException("Size group not found"));
+                }
+
                 String slug = generateSlug(request.getName());
 
                 Product product = Product.builder()
@@ -66,6 +75,7 @@ public class ProductService implements IProductService {
                                 .description(request.getDescription())
                                 .category(category)
                                 .brand(brand)
+                                .sizeGroup(sizeGroup)
                                 .gender(request.getGender())
                                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.ACTIVE)
                                 .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
@@ -96,6 +106,14 @@ public class ProductService implements IProductService {
                         product.setSlug(generateSlug(request.getName()));
                 }
 
+                if (request.getSizeGroupId() != null) {
+                        SizeGroup sizeGroup = sizeGroupRepository.findById(request.getSizeGroupId())
+                                        .orElseThrow(() -> new ResourceNotFoundException("Size group not found"));
+                        product.setSizeGroup(sizeGroup);
+                } else {
+                        product.setSizeGroup(null);
+                }
+
                 product.setDescription(request.getDescription());
                 product.setCategory(category);
                 product.setBrand(brand);
@@ -117,19 +135,33 @@ public class ProductService implements IProductService {
                 Product product = productRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 ProductMessageConstant.PRODUCT_NOT_FOUND));
-                productRepository.delete(product);
+                product.setStatus(ProductStatus.DELETED);
+                productRepository.save(product);
+        }
+
+        @Override
+        @Transactional
+        @Loggable(action = "RESTORE_PRODUCT", module = "PRODUCT")
+        @CacheEvict(value = { "products", "product_details" }, allEntries = true)
+        public void restoreProduct(Long id) {
+                Product product = productRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                ProductMessageConstant.PRODUCT_NOT_FOUND));
+                product.setStatus(ProductStatus.ACTIVE);
+                productRepository.save(product);
         }
 
         @Override
         @Transactional(readOnly = true)
-        @Cacheable(value = "products", key = "{#keyword, #categoryId, #brandId, #gender, #size, #color, #minPrice, #maxPrice, #isFeatured, #status, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
+        @Cacheable(value = "products", key = "{#keyword, #categoryId, #brandId, #gender, #size, #color, #minPrice, #maxPrice, #isFeatured, #status, #includeDeleted, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
         public Page<ProductListResponse> getProducts(String keyword, Long categoryId, Long brandId, Gender gender,
                         String size,
                         String color, BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, ProductStatus status,
+                        Boolean includeDeleted,
                         Pageable pageable) {
                 Specification<Product> spec = ProductSpecification.filterProducts(keyword, categoryId, brandId, gender,
                                 size,
-                                color, minPrice, maxPrice, isFeatured, status);
+                                color, minPrice, maxPrice, isFeatured, status, includeDeleted);
                 Page<Product> products = productRepository.findAllWithAssociations(spec, pageable);
                 return products.map(this::mapToListResponse);
         }
@@ -151,6 +183,9 @@ public class ProductService implements IProductService {
                 Product product = productRepository.findBySlugWithAssociations(slug)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 ProductMessageConstant.PRODUCT_NOT_FOUND));
+                if (product.getStatus() == ProductStatus.DELETED) {
+                        throw new ResourceNotFoundException(ProductMessageConstant.PRODUCT_NOT_FOUND);
+                }
                 return mapToDetailResponse(product);
         }
 
@@ -268,6 +303,7 @@ public class ProductService implements IProductService {
                                 .isCustomizable(product.getCategory() != null && product.getCategory().isCustomizable())
                                 .averageRating(product.getAverageRating())
                                 .reviewCount(product.getReviewCount())
+                                .sizeGroupId(product.getSizeGroup() != null ? product.getSizeGroup().getId() : null)
                                 .build();
         }
 }
