@@ -49,6 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     throw new RuntimeException("Token has been revoked or expired context.");
                 }
 
+                if (!user.isActive()) {
+                    throw new RuntimeException("Account is disabled");
+                }
+
                 List<String> roles = jwtService.extractRolesFromAccessToken(token);
                 List<GrantedAuthority> authorities = roles.stream()
                         .map(r -> new SimpleGrantedAuthority("ROLE_" + r))

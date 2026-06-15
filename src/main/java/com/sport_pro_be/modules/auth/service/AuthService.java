@@ -92,6 +92,9 @@ public class AuthService implements IAuthService {
         String normalizedEmail = normalizeEmail(request.email());
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new UnauthorizedException(INVALID_CREDENTIALS));
+        if (!user.isActive()) {
+            throw new UnauthorizedException(ACCOUNT_DELETED);
+        }
         if (!user.isEmailVerified()) {
             throw new BadRequestException(EMAIL_NOT_VERIFIED);
         }
@@ -128,6 +131,9 @@ public class AuthService implements IAuthService {
         }
 
         User user = currentToken.getUser();
+        if (!user.isActive()) {
+            throw new UnauthorizedException(ACCOUNT_DELETED);
+        }
         String newRawRefreshToken = generateRefreshTokenValue();
         String newRefreshHash = hashRefreshToken(newRawRefreshToken);
 

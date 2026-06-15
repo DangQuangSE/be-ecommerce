@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +28,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/products")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Validated
 public class AdminProductController {
 
     private final IProductService productService;
@@ -104,9 +107,11 @@ public class AdminProductController {
             )
             @RequestParam(required = false) Boolean isFeatured,
 
+            @RequestParam(required = false, defaultValue = "true") Boolean includeDeleted,
+
             @ParameterObject
             @org.springframework.data.web.PageableDefault(size = 20, sort = "id", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
-        Page<ProductListResponse> products = productService.getProducts(keyword, categoryId, brandId, gender, size, color, minPrice, maxPrice, isFeatured, status, pageable);
+        Page<ProductListResponse> products = productService.getProducts(keyword, categoryId, brandId, gender, size, color, minPrice, maxPrice, isFeatured, status, includeDeleted, pageable);
         return ApiResponse.of(ProductMessageConstant.SUCCESS, products);
     }
 
@@ -131,10 +136,24 @@ public class AdminProductController {
         return ApiResponse.of(ProductMessageConstant.PRODUCT_DELETED, null);
     }
 
+    @PatchMapping("/{id}/restore")
+    public ApiResponse<Void> restoreProduct(@PathVariable Long id) {
+        productService.restoreProduct(id);
+        return ApiResponse.of("Product restored successfully", null);
+    }
+
     // Variants
     @PostMapping("/{productId}/variants")
     public ApiResponse<ProductVariantResponse> createVariant(@PathVariable Long productId, @Valid @RequestBody ProductVariantRequest request) {
         return ApiResponse.of(ProductMessageConstant.VARIANT_CREATED, productVariantService.createVariant(productId, request));
+    }
+
+    @PostMapping("/{productId}/variants/batch")
+    public ApiResponse<List<ProductVariantResponse>> createVariantsBatch(
+            @PathVariable Long productId,
+            @Valid @RequestBody List<ProductVariantRequest> requests) {
+        return ApiResponse.of(ProductMessageConstant.VARIANT_CREATED,
+                productVariantService.createVariantsBatch(productId, requests));
     }
     // Images
     @PostMapping(value = "/{productId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

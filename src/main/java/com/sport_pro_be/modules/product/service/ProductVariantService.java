@@ -15,8 +15,13 @@ import com.sport_pro_be.modules.color.domain.Color;
 import com.sport_pro_be.modules.color.repository.ColorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -90,6 +95,42 @@ public class ProductVariantService implements IProductVariantService {
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException(ProductMessageConstant.VARIANT_NOT_FOUND));
         productVariantRepository.delete(variant);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = { "products", "product_details" }, allEntries = true)
+    public List<ProductVariantResponse> createVariantsBatch(Long productId, List<ProductVariantRequest> requests) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException(ProductMessageConstant.PRODUCT_NOT_FOUND));
+
+        List<ProductVariant> variants = new ArrayList<>();
+        for (ProductVariantRequest request : requests) {
+            if (productVariantRepository.existsBySku(request.getSku())) {
+                throw new ConflictException(ProductMessageConstant.SKU_ALREADY_EXISTS);
+            }
+            Color color = colorRepository.findById(request.getColorId())
+                    .orElseThrow(() -> new ResourceNotFoundException(ColorMessageConstant.COLOR_NOT_FOUND));
+
+            variants.add(ProductVariant.builder()
+                    .product(product)
+                    .sku(request.getSku())
+                    .size(request.getSize())
+                    .color(color)
+                    .colorOld(color.getName())
+                    .originalPrice(request.getOriginalPrice())
+                    .salePrice(request.getSalePrice())
+                    .stockQuantity(request.getStockQuantity())
+                    .status(request.getStatus())
+                    .build());
+        }
+
+        try {
+            List<ProductVariant> saved = productVariantRepository.saveAll(variants);
+            return saved.stream().map(this::mapToResponse).collect(Collectors.toList());
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException(ProductMessageConstant.SKU_ALREADY_EXISTS);
+        }
     }
 
     private ProductVariantResponse mapToResponse(ProductVariant v) {
