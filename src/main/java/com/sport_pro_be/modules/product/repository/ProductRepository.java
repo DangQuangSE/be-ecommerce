@@ -28,4 +28,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     // preventing reuse of a slug that belongs to a DELETED product.
     @Query(value = "SELECT COUNT(*) FROM products WHERE slug = :slug OR slug LIKE CONCAT(:slug, '-%')", nativeQuery = true)
     long countBySlugPattern(@Param("slug") String slug);
+
+    boolean existsBySizeGroupId(Long sizeGroupId);
 }
