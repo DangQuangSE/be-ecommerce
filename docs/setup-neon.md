@@ -41,13 +41,31 @@ Spring Boot với `ddl-auto=update` sẽ tự động tạo bảng khi start.
 2. Click **SQL Editor** (sidebar trái)
 3. Chạy các lệnh SQL trực tiếp
 
-### Tạo Admin User:
+### Tạo Admin User
+
+**Cách 1 — Seeder tự động (khuyến nghị cho local/Docker):**
+
+Thêm vào `.env`:
+
+```env
+APP_ADMIN_SEED_ENABLED=true
+APP_ADMIN_EMAIL=admin@sportpro.local
+APP_ADMIN_PASSWORD=Admin@123456
+```
+
+Restart API. Seeder tạo user `ADMIN` nếu email chưa tồn tại. Chỉ bật trên môi trường dev — **không** set `APP_ADMIN_SEED_ENABLED=true` trên production.
+
+Đăng nhập: `POST /api/auth/login` với email/password trên.
+
+**Cách 2 — SQL thủ công (fallback):**
 
 Sau khi register tài khoản qua API, chạy:
 
 ```sql
 UPDATE app_users SET role = 'ADMIN' WHERE email = 'your-email@gmail.com';
 ```
+
+Nếu email đã tồn tại với role `USER`, seeder **không** tự nâng lên `ADMIN` — dùng SQL hoặc đổi email trong `.env`.
 
 ### Xem danh sách users:
 
