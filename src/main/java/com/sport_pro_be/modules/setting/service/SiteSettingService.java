@@ -6,6 +6,7 @@ import com.sport_pro_be.modules.setting.dto.SiteSettingRequest;
 import com.sport_pro_be.modules.setting.dto.SiteSettingResponse;
 import com.sport_pro_be.modules.setting.repository.SiteSettingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,12 +32,19 @@ public class SiteSettingService implements ISiteSettingService {
 
     private SiteSetting getOrCreateSettings() {
         return siteSettingRepository.findById(SiteSettingConstant.SETTINGS_ID)
-                .orElseGet(() -> {
-                    SiteSetting settings = new SiteSetting();
-                    settings.setId(SiteSettingConstant.SETTINGS_ID);
-                    settings.setReturnPolicy(SiteSettingConstant.DEFAULT_RETURN_POLICY);
-                    return siteSettingRepository.save(settings);
-                });
+                .orElseGet(this::createDefaultSettings);
+    }
+
+    private SiteSetting createDefaultSettings() {
+        SiteSetting settings = new SiteSetting();
+        settings.setId(SiteSettingConstant.SETTINGS_ID);
+        settings.setReturnPolicy(SiteSettingConstant.DEFAULT_RETURN_POLICY);
+        try {
+            return siteSettingRepository.save(settings);
+        } catch (DataIntegrityViolationException e) {
+            return siteSettingRepository.findById(SiteSettingConstant.SETTINGS_ID)
+                    .orElseThrow(() -> e);
+        }
     }
 
     private SiteSettingResponse mapEntityToResponse(SiteSetting settings) {
