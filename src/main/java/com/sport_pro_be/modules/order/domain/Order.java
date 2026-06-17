@@ -38,6 +38,13 @@ public class Order extends AbstractAuditingEntity {
     @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;
 
+    @Column(name = "customer_name", length = 200)
+    private String customerName;
+
+    @Column(name = "payment_completed", nullable = false)
+    @Builder.Default
+    private boolean paymentCompleted = false;
+
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 

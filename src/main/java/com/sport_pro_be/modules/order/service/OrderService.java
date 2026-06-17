@@ -82,12 +82,22 @@ public class OrderService implements IOrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
+        String customerName = request.getCustomerName();
+        if (customerName != null) {
+            customerName = customerName.trim();
+            if (customerName.isEmpty()) {
+                customerName = null;
+            }
+        }
+
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(request.getShippingAddress())
                 .phoneNumber(request.getPhoneNumber())
+                .customerName(customerName)
                 .paymentMethod(request.getPaymentMethod())
                 .status(OrderStatus.PENDING)
+                .paymentCompleted(false)
                 .totalAmount(BigDecimal.ZERO)
                 .discountAmount(BigDecimal.ZERO)
                 .build();
@@ -213,7 +223,7 @@ public class OrderService implements IOrderService {
         Order order = orderRepository.findFulfillmentGraphById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
 
-        if (order.getStatus() == OrderStatus.CONFIRMED) {
+        if (order.isPaymentCompleted()) {
             return;
         }
 
@@ -294,6 +304,8 @@ public class OrderService implements IOrderService {
                 .id(order.getId())
                 .shippingAddress(order.getShippingAddress())
                 .phoneNumber(order.getPhoneNumber())
+                .customerName(order.getCustomerName())
+                .paymentCompleted(order.isPaymentCompleted())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .paymentMethod(order.getPaymentMethod())

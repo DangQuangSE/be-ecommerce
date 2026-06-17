@@ -87,7 +87,7 @@ public class VnpayService {
 
         String responseCode = params.get("vnp_ResponseCode");
         if (VNP_RESPONSE_SUCCESS.equals(responseCode)) {
-            if (order.getStatus() == OrderStatus.CONFIRMED) {
+            if (order.isPaymentCompleted()) {
                 return VnpayIpnResponse.success();
             }
             if (!verifyAmount(order, params.get("vnp_Amount"))) {
@@ -95,7 +95,7 @@ public class VnpayService {
                 return VnpayIpnResponse.error("04", "Invalid Amount");
             }
             orderService.fulfillOrder(order.getId());
-            order.setStatus(OrderStatus.CONFIRMED);
+            order.setPaymentCompleted(true);
             orderRepository.save(order);
             return VnpayIpnResponse.success();
         }
@@ -120,7 +120,7 @@ public class VnpayService {
         return VnpayVerifyResponse.builder()
                 .orderId(order.getId())
                 .status(order.getStatus())
-                .paymentStatus(mapPaymentStatus(order.getStatus()))
+                .paymentStatus(mapPaymentStatus(order))
                 .txnRef(order.getVnpTxnRef())
                 .build();
     }
@@ -196,9 +196,11 @@ public class VnpayService {
         }
     }
 
-    private static VnpayPaymentStatus mapPaymentStatus(OrderStatus status) {
-        return switch (status) {
-            case CONFIRMED, PROCESSING, SHIPPED, DELIVERED -> VnpayPaymentStatus.SUCCESS;
+    private static VnpayPaymentStatus mapPaymentStatus(Order order) {
+        if (order.isPaymentCompleted()) {
+            return VnpayPaymentStatus.SUCCESS;
+        }
+        return switch (order.getStatus()) {
             case CANCELLED -> VnpayPaymentStatus.FAILED;
             default -> VnpayPaymentStatus.PENDING;
         };
