@@ -27,10 +27,4 @@ public class AdminReviewController {
             @RequestBody String replyComment) {
         return ApiResponse.of(ReviewMessageConstant.UPDATE_SUCCESS, reviewService.replyReview(id, replyComment));
     }
-
-    @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteReview(@PathVariable Long id) {
-        reviewService.deleteReview(id);
-        return ApiResponse.of(ReviewMessageConstant.DELETE_SUCCESS, null);
-    }
 }

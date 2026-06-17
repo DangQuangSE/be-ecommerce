@@ -5,7 +5,6 @@ public class ReviewMessageConstant {
 
     public static final String CREATE_SUCCESS = "Review submitted successfully";
     public static final String UPDATE_SUCCESS = "Review updated successfully";
-    public static final String DELETE_SUCCESS = "Review deleted successfully";
     public static final String NOT_FOUND = "Review not found";
     public static final String ORDER_ITEM_NOT_FOUND = "Order item not found";
     public static final String ORDER_NOT_DELIVERED = "You can only review products from delivered orders";

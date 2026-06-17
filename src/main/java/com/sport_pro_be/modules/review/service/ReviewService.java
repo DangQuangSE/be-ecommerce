@@ -111,16 +111,6 @@ public class ReviewService implements IReviewService {
 
     @Override
     @Transactional
-    public void deleteReview(Long reviewId) {
-        ProductReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException(ReviewMessageConstant.NOT_FOUND));
-        Product product = review.getProduct();
-        reviewRepository.delete(review);
-        updateProductRatingSummary(product);
-    }
-
-    @Override
-    @Transactional
     public ReviewResponse replyReview(Long reviewId, String replyComment) {
         ProductReview review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException(ReviewMessageConstant.NOT_FOUND));
@@ -159,6 +149,8 @@ public class ReviewService implements IReviewService {
 
         return ReviewResponse.builder()
                 .id(review.getId())
+                .productId(review.getProduct().getId())
+                .productName(review.getProduct().getName())
                 .userName(name)
                 .userAvatar(review.getUser().getAvatar())
                 .rating(review.getRating())
