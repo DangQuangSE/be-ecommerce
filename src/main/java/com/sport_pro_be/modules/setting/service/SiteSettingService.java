@@ -1,12 +1,12 @@
 package com.sport_pro_be.modules.setting.service;
 
+import com.sport_pro_be.exception.ResourceNotFoundException;
 import com.sport_pro_be.modules.setting.constant.SiteSettingConstant;
 import com.sport_pro_be.modules.setting.domain.SiteSetting;
 import com.sport_pro_be.modules.setting.dto.SiteSettingRequest;
 import com.sport_pro_be.modules.setting.dto.SiteSettingResponse;
 import com.sport_pro_be.modules.setting.repository.SiteSettingRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,34 +17,21 @@ public class SiteSettingService implements ISiteSettingService {
     private final SiteSettingRepository siteSettingRepository;
 
     @Override
-    @Transactional
     public SiteSettingResponse getSettings() {
-        return mapEntityToResponse(getOrCreateSettings());
+        return mapEntityToResponse(findSettings());
     }
 
     @Override
     @Transactional
     public SiteSettingResponse updateSettings(SiteSettingRequest request) {
-        SiteSetting settings = getOrCreateSettings();
+        SiteSetting settings = findSettings();
         settings.setReturnPolicy(request.getReturnPolicy());
         return mapEntityToResponse(siteSettingRepository.save(settings));
     }
 
-    private SiteSetting getOrCreateSettings() {
+    private SiteSetting findSettings() {
         return siteSettingRepository.findById(SiteSettingConstant.SETTINGS_ID)
-                .orElseGet(this::createDefaultSettings);
-    }
-
-    private SiteSetting createDefaultSettings() {
-        SiteSetting settings = new SiteSetting();
-        settings.setId(SiteSettingConstant.SETTINGS_ID);
-        settings.setReturnPolicy(SiteSettingConstant.DEFAULT_RETURN_POLICY);
-        try {
-            return siteSettingRepository.save(settings);
-        } catch (DataIntegrityViolationException e) {
-            return siteSettingRepository.findById(SiteSettingConstant.SETTINGS_ID)
-                    .orElseThrow(() -> e);
-        }
+                .orElseThrow(() -> new ResourceNotFoundException(SiteSettingConstant.SITE_SETTINGS_NOT_FOUND));
     }
 
     private SiteSettingResponse mapEntityToResponse(SiteSetting settings) {
