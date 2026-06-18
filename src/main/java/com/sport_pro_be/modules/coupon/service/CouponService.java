@@ -73,4 +73,41 @@ public class CouponService implements ICouponService {
         
         return discount;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.sport_pro_be.modules.coupon.dto.CouponResponse> getActiveCoupons(User user) {
+        LocalDateTime now = LocalDateTime.now();
+        return couponRepository.findAllByIsActiveTrueAndIsDeletedFalse().stream()
+                .filter(coupon -> {
+                    if (coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) {
+                        return false;
+                    }
+                    if (coupon.getEndDate() != null && now.isAfter(coupon.getEndDate())) {
+                        return false;
+                    }
+                    if (coupon.getUsageLimit() != null && coupon.getUsedCount() >= coupon.getUsageLimit()) {
+                        return false;
+                    }
+                    if (coupon.getRequiredTier() != null && user.getTier().ordinal() < coupon.getRequiredTier().ordinal()) {
+                        return false;
+                    }
+                    return true;
+                })
+                .map(coupon -> com.sport_pro_be.modules.coupon.dto.CouponResponse.builder()
+                        .id(coupon.getId())
+                        .code(coupon.getCode())
+                        .discountType(coupon.getDiscountType())
+                        .discountValue(coupon.getDiscountValue())
+                        .minOrderAmount(coupon.getMinOrderAmount())
+                        .maxDiscountAmount(coupon.getMaxDiscountAmount())
+                        .requiredTier(coupon.getRequiredTier())
+                        .startDate(coupon.getStartDate())
+                        .endDate(coupon.getEndDate())
+                        .usageLimit(coupon.getUsageLimit())
+                        .usedCount(coupon.getUsedCount())
+                        .isActive(coupon.isActive())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
