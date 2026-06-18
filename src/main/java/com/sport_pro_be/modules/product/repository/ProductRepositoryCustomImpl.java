@@ -49,9 +49,10 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                 if (priceProperties.contains(property)) {
                     Subquery<BigDecimal> priceSubquery = cq.subquery(BigDecimal.class);
                     Root<ProductVariant> variantRoot = priceSubquery.from(ProductVariant.class);
+                    Root<Product> correlatedRoot = priceSubquery.correlate(root);
                     priceSubquery.select(cb.min(
                             cb.coalesce(variantRoot.get("salePrice"), variantRoot.get("originalPrice"))));
-                    priceSubquery.where(cb.equal(variantRoot.get("product"), root));
+                    priceSubquery.where(cb.equal(variantRoot.get("product"), correlatedRoot));
                     if (order.isAscending()) {
                         orders.add(cb.asc(priceSubquery));
                     } else {
