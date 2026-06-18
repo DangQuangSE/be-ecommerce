@@ -27,8 +27,6 @@ public class ProductVariantRequest {
     @NotNull(message = ProductMessageConstant.PRICE_REQUIRED)
     private BigDecimal originalPrice;
 
-    private BigDecimal salePrice;
-
     @Min(value = 0, message = ProductMessageConstant.STOCK_NON_NEGATIVE)
     private Integer stockQuantity = 0;
 

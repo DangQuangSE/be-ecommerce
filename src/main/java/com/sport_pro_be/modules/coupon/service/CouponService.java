@@ -70,7 +70,29 @@ public class CouponService implements ICouponService {
         if (discount.compareTo(orderAmount) > 0) {
             discount = orderAmount;
         }
-        
+
         return discount;
+    }
+
+    @Override
+    public BigDecimal calculateSalePrice(Coupon coupon, BigDecimal originalPrice) {
+        if (coupon == null || originalPrice == null) {
+            return null;
+        }
+        if (coupon.isDeleted() || !coupon.isActive()) {
+            return null;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) {
+            return null;
+        }
+        if (coupon.getEndDate() != null && now.isAfter(coupon.getEndDate())) {
+            return null;
+        }
+
+        BigDecimal discount = calculateDiscount(coupon, originalPrice);
+        BigDecimal salePrice = originalPrice.subtract(discount);
+        return salePrice.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : salePrice;
     }
 }

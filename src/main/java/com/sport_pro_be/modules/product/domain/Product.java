@@ -2,6 +2,7 @@ package com.sport_pro_be.modules.product.domain;
 
 import com.sport_pro_be.modules.brand.domain.Brand;
 import com.sport_pro_be.modules.category.domain.Category;
+import com.sport_pro_be.modules.coupon.domain.Coupon;
 import com.sport_pro_be.modules.size.domain.SizeGroup;
 import com.sport_pro_be.common.AbstractAuditingEntity;
 import com.sport_pro_be.modules.product.enums.Gender;
@@ -54,6 +55,10 @@ public class Product extends AbstractAuditingEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "size_group_id")
     private SizeGroup sizeGroup;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coupon_id")
+    private Coupon coupon;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
