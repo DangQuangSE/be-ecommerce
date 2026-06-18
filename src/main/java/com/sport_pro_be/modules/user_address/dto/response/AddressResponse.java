@@ -1,6 +1,5 @@
 package com.sport_pro_be.modules.user_address.dto.response;
 
-import com.sport_pro_be.modules.user_address.enums.AddressType;
 import lombok.*;
 
 @Getter
@@ -10,12 +9,12 @@ import lombok.*;
 @Builder
 public class AddressResponse {
     private Long id;
-    private String receiverName;
+    private String fullName;
     private String phoneNumber;
-    private String province;
-    private String district;
+    private String addressLine;
     private String ward;
-    private String detailAddress;
+    private String district;
+    private String city;
+    private String label;
     private Boolean isDefault;
-    private AddressType type;
 }
