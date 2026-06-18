@@ -1,6 +1,7 @@
 package com.sport_pro_be.modules.product.repository;
 
 import com.sport_pro_be.modules.product.domain.Product;
+import com.sport_pro_be.modules.product.domain.ProductVariant;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -11,8 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
@@ -35,14 +38,26 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         }
 
         List<Order> orders = new ArrayList<>();
+        Set<String> priceProperties = Set.of("salePrice", "originalPrice", "price", "basePrice", "minPrice", "maxPrice");
         if (pageable.getSort() != null && pageable.getSort().isSorted()) {
-            java.util.Set<String> attributeNames = root.getModel().getAttributes().stream()
+            Set<String> attributeNames = root.getModel().getAttributes().stream()
                     .map(jakarta.persistence.metamodel.Attribute::getName)
                     .collect(java.util.stream.Collectors.toSet());
 
             pageable.getSort().forEach(order -> {
                 String property = order.getProperty();
-                if (attributeNames.contains(property)) {
+                if (priceProperties.contains(property)) {
+                    Subquery<BigDecimal> priceSubquery = cq.subquery(BigDecimal.class);
+                    Root<ProductVariant> variantRoot = priceSubquery.from(ProductVariant.class);
+                    priceSubquery.select(cb.min(
+                            cb.coalesce(variantRoot.get("salePrice"), variantRoot.get("originalPrice"))));
+                    priceSubquery.where(cb.equal(variantRoot.get("product"), root));
+                    if (order.isAscending()) {
+                        orders.add(cb.asc(priceSubquery));
+                    } else {
+                        orders.add(cb.desc(priceSubquery));
+                    }
+                } else if (attributeNames.contains(property)) {
                     if (order.isAscending()) {
                         orders.add(cb.asc(root.get(property)));
                     } else {
