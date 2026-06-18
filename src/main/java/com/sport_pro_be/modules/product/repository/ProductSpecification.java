@@ -5,9 +5,9 @@ import com.sport_pro_be.modules.product.enums.ProductStatus;
 import com.sport_pro_be.modules.product.domain.Product;
 import com.sport_pro_be.modules.product.domain.ProductVariant;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -57,32 +57,38 @@ public class ProductSpecification {
             boolean hasColor = color != null && !color.isBlank();
 
             if (hasSize || hasColor || minPrice != null || maxPrice != null) {
-                Join<Product, ProductVariant> variantJoin = root.join("variants", JoinType.INNER);
+                Subquery<Long> variantSubquery = query.subquery(Long.class);
+                Root<ProductVariant> variantRoot = variantSubquery.from(ProductVariant.class);
+                Root<Product> correlatedRoot = variantSubquery.correlate(root);
+                variantSubquery.select(variantRoot.get("id"));
+
+                List<Predicate> variantPredicates = new ArrayList<>();
+                variantPredicates.add(criteriaBuilder.equal(variantRoot.get("product"), correlatedRoot));
+                variantPredicates.add(criteriaBuilder.equal(variantRoot.get("status"), ProductStatus.ACTIVE));
 
                 if (hasSize) {
-                    predicates.add(criteriaBuilder.equal(variantJoin.get("size"), size));
+                    variantPredicates.add(criteriaBuilder.equal(variantRoot.get("size"), size));
                 }
 
                 if (hasColor) {
-                    predicates.add(criteriaBuilder.or(
-                            criteriaBuilder.equal(variantJoin.get("color").get("name"), color),
-                            criteriaBuilder.equal(variantJoin.get("colorOld"), color)
+                    variantPredicates.add(criteriaBuilder.or(
+                            criteriaBuilder.equal(variantRoot.get("color").get("name"), color),
+                            criteriaBuilder.equal(variantRoot.get("colorOld"), color)
                     ));
                 }
 
                 if (minPrice != null) {
-                    Expression<BigDecimal> effectivePrice = criteriaBuilder.coalesce(variantJoin.get("salePrice"), variantJoin.get("originalPrice"));
-                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(effectivePrice, minPrice));
+                    Expression<BigDecimal> effectivePrice = criteriaBuilder.coalesce(variantRoot.get("salePrice"), variantRoot.get("originalPrice"));
+                    variantPredicates.add(criteriaBuilder.greaterThanOrEqualTo(effectivePrice, minPrice));
                 }
 
                 if (maxPrice != null) {
-                    Expression<BigDecimal> effectivePrice = criteriaBuilder.coalesce(variantJoin.get("salePrice"), variantJoin.get("originalPrice"));
-                    predicates.add(criteriaBuilder.lessThanOrEqualTo(effectivePrice, maxPrice));
+                    Expression<BigDecimal> effectivePrice = criteriaBuilder.coalesce(variantRoot.get("salePrice"), variantRoot.get("originalPrice"));
+                    variantPredicates.add(criteriaBuilder.lessThanOrEqualTo(effectivePrice, maxPrice));
                 }
-                
-                predicates.add(criteriaBuilder.equal(variantJoin.get("status"), ProductStatus.ACTIVE));
-                
-                query.distinct(true);
+
+                variantSubquery.where(criteriaBuilder.and(variantPredicates.toArray(new Predicate[0])));
+                predicates.add(criteriaBuilder.exists(variantSubquery));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

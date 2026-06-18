@@ -7,4 +7,5 @@ import java.math.BigDecimal;
 public interface ICouponService {
     Coupon validateAndGetCoupon(String code, User user, BigDecimal orderAmount);
     BigDecimal calculateDiscount(Coupon coupon, BigDecimal orderAmount);
+    java.util.List<com.sport_pro_be.modules.coupon.dto.CouponResponse> getActiveCoupons(User user);
 }

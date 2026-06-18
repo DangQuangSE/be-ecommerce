@@ -30,6 +30,7 @@ public class ProductMessageConstant {
     public static final String PRODUCT_CREATED = "Product created successfully";
     public static final String PRODUCT_UPDATED = "Product updated successfully";
     public static final String PRODUCT_DELETED = "Product deleted successfully";
+    public static final String PRODUCT_RESTORED = "Product restored successfully";
     public static final String VARIANT_CREATED = "Variant created successfully";
     public static final String VARIANT_UPDATED = "Variant updated successfully";
     public static final String VARIANT_DELETED = "Variant deleted successfully";
