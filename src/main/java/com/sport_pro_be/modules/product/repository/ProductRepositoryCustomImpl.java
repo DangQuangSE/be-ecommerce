@@ -30,7 +30,7 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         root.fetch("brand", JoinType.LEFT);
         root.fetch("category", JoinType.LEFT);
 
-        cq.select(root).distinct(true);
+        cq.select(root);
 
         if (spec != null) {
             Predicate predicate = spec.toPredicate(root, cq, cb);
