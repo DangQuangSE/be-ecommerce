@@ -4,10 +4,6 @@ import com.sport_pro_be.modules.brand.domain.Brand;
 import com.sport_pro_be.modules.brand.repository.BrandRepository;
 import com.sport_pro_be.modules.category.domain.Category;
 import com.sport_pro_be.modules.category.repository.CategoryRepository;
-import com.sport_pro_be.modules.coupon.constant.CouponMessageConstant;
-import com.sport_pro_be.modules.coupon.domain.Coupon;
-import com.sport_pro_be.modules.coupon.interfaces.ICouponService;
-import com.sport_pro_be.modules.coupon.repository.CouponRepository;
 import com.sport_pro_be.modules.size.domain.SizeGroup;
 import com.sport_pro_be.modules.size.repository.SizeGroupRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -52,8 +48,6 @@ public class ProductService implements IProductService {
         private final CategoryRepository categoryRepository;
         private final BrandRepository brandRepository;
         private final SizeGroupRepository sizeGroupRepository;
-        private final CouponRepository couponRepository;
-        private final ICouponService couponService;
 
         @Override
         @Transactional
@@ -73,8 +67,6 @@ public class ProductService implements IProductService {
                                         .orElseThrow(() -> new ResourceNotFoundException("Size group not found"));
                 }
 
-                Coupon coupon = resolveCoupon(request.getCouponId());
-
                 String slug = generateSlug(request.getName());
 
                 Product product = Product.builder()
@@ -84,7 +76,6 @@ public class ProductService implements IProductService {
                                 .category(category)
                                 .brand(brand)
                                 .sizeGroup(sizeGroup)
-                                .coupon(coupon)
                                 .gender(request.getGender())
                                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.ACTIVE)
                                 .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
@@ -132,25 +123,8 @@ public class ProductService implements IProductService {
                         product.setIsFeatured(request.getIsFeatured());
                 }
 
-                product.setCoupon(resolveCoupon(request.getCouponId()));
-                recalculateVariantSalePrices(product);
-
                 product = productRepository.save(product);
                 return mapToDetailResponse(product);
-        }
-
-        private Coupon resolveCoupon(Long couponId) {
-                if (couponId == null) {
-                        return null;
-                }
-                return couponRepository.findByIdAndIsDeletedFalse(couponId)
-                                .orElseThrow(() -> new ResourceNotFoundException(CouponMessageConstant.COUPON_NOT_FOUND));
-        }
-
-        private void recalculateVariantSalePrices(Product product) {
-                for (ProductVariant variant : product.getVariants()) {
-                        variant.setSalePrice(couponService.calculateSalePrice(product.getCoupon(), variant.getOriginalPrice()));
-                }
         }
 
         @Override
@@ -330,8 +304,6 @@ public class ProductService implements IProductService {
                                 .averageRating(product.getAverageRating())
                                 .reviewCount(product.getReviewCount())
                                 .sizeGroupId(product.getSizeGroup() != null ? product.getSizeGroup().getId() : null)
-                                .couponId(product.getCoupon() != null ? product.getCoupon().getId() : null)
-                                .couponCode(product.getCoupon() != null ? product.getCoupon().getCode() : null)
                                 .build();
         }
 }

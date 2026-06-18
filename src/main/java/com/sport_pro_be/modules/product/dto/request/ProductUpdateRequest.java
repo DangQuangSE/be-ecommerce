@@ -31,8 +31,6 @@ public class ProductUpdateRequest {
     private Boolean isFeatured;
 
     private Long sizeGroupId;
-
-    private Long couponId;
 }
 
 

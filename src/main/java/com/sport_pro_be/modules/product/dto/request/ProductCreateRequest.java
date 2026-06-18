@@ -30,8 +30,6 @@ public class ProductCreateRequest {
     private ProductStatus status;
 
     private Long sizeGroupId;
-
-    private Long couponId;
 }
 
 

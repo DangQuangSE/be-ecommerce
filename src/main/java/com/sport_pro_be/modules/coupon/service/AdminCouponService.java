@@ -5,11 +5,7 @@ import com.sport_pro_be.modules.coupon.domain.Coupon;
 import com.sport_pro_be.modules.coupon.dto.CouponRequest;
 import com.sport_pro_be.modules.coupon.dto.CouponResponse;
 import com.sport_pro_be.modules.coupon.interfaces.IAdminCouponService;
-import com.sport_pro_be.modules.coupon.interfaces.ICouponService;
 import com.sport_pro_be.modules.coupon.repository.CouponRepository;
-import com.sport_pro_be.modules.product.domain.Product;
-import com.sport_pro_be.modules.product.domain.ProductVariant;
-import com.sport_pro_be.modules.product.repository.ProductRepository;
 import com.sport_pro_be.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,15 +13,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class AdminCouponService implements IAdminCouponService {
 
     private final CouponRepository couponRepository;
-    private final ProductRepository productRepository;
-    private final ICouponService couponService;
 
     @Override
     @Transactional
@@ -69,9 +61,8 @@ public class AdminCouponService implements IAdminCouponService {
         coupon.setEndDate(request.getEndDate());
         coupon.setUsageLimit(request.getUsageLimit());
         coupon.setActive(request.isActive());
-
+        
         coupon = couponRepository.save(coupon);
-        recalculateAssignedProducts(coupon);
         return mapToResponse(coupon);
     }
 
@@ -83,17 +74,6 @@ public class AdminCouponService implements IAdminCouponService {
         coupon.setDeleted(true);
         coupon.setActive(false);
         couponRepository.save(coupon);
-        recalculateAssignedProducts(coupon);
-    }
-
-    private void recalculateAssignedProducts(Coupon coupon) {
-        List<Product> products = productRepository.findByCouponId(coupon.getId());
-        for (Product product : products) {
-            for (ProductVariant variant : product.getVariants()) {
-                variant.setSalePrice(couponService.calculateSalePrice(coupon, variant.getOriginalPrice()));
-            }
-        }
-        productRepository.saveAll(products);
     }
 
     private CouponResponse mapToResponse(Coupon coupon) {

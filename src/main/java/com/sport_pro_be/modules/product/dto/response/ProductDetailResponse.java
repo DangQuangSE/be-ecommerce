@@ -28,8 +28,6 @@ public class ProductDetailResponse {
     private Double averageRating;
     private Integer reviewCount;
     private Long sizeGroupId;
-    private Long couponId;
-    private String couponCode;
 }
 
 

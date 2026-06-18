@@ -2,7 +2,6 @@ package com.sport_pro_be.modules.product.service;
 
 import com.sport_pro_be.exception.ConflictException;
 import com.sport_pro_be.exception.ResourceNotFoundException;
-import com.sport_pro_be.modules.coupon.interfaces.ICouponService;
 import com.sport_pro_be.modules.product.constant.ProductMessageConstant;
 import com.sport_pro_be.modules.product.domain.Product;
 import com.sport_pro_be.modules.product.domain.ProductVariant;
@@ -31,7 +30,6 @@ public class ProductVariantService implements IProductVariantService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductRepository productRepository;
     private final ColorRepository colorRepository;
-    private final ICouponService couponService;
 
     @Override
     @Transactional
@@ -54,7 +52,7 @@ public class ProductVariantService implements IProductVariantService {
                 .color(color)
                 .colorOld(color.getName())
                 .originalPrice(request.getOriginalPrice())
-                .salePrice(couponService.calculateSalePrice(product.getCoupon(), request.getOriginalPrice()))
+                .salePrice(request.getSalePrice())
                 .stockQuantity(request.getStockQuantity())
                 .status(request.getStatus())
                 .build();
@@ -82,7 +80,7 @@ public class ProductVariantService implements IProductVariantService {
         variant.setColor(color);
         variant.setColorOld(color.getName());
         variant.setOriginalPrice(request.getOriginalPrice());
-        variant.setSalePrice(couponService.calculateSalePrice(variant.getProduct().getCoupon(), request.getOriginalPrice()));
+        variant.setSalePrice(request.getSalePrice());
         variant.setStockQuantity(request.getStockQuantity());
         variant.setStatus(request.getStatus());
 
@@ -121,7 +119,7 @@ public class ProductVariantService implements IProductVariantService {
                     .color(color)
                     .colorOld(color.getName())
                     .originalPrice(request.getOriginalPrice())
-                    .salePrice(couponService.calculateSalePrice(product.getCoupon(), request.getOriginalPrice()))
+                    .salePrice(request.getSalePrice())
                     .stockQuantity(request.getStockQuantity())
                     .status(request.getStatus())
                     .build());
