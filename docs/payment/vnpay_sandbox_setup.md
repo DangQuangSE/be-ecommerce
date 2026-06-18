@@ -33,8 +33,8 @@ Endpoint bridge redirect 302 về `sportpro://payment-result?...`.
 1. `POST /api/v1/orders` — `paymentMethod: BANK_TRANSFER` (stock/cart deferred)
 2. `POST /api/v1/payments/vnpay/create` — `{ "orderId": 1 }`
 3. App mở `paymentUrl` trong WebView
-4. VNPay → IPN → order `CONFIRMED` + fulfill stock/cart
-5. App → `GET /api/v1/payments/vnpay/verify/{orderId}`
+4. VNPay → IPN → `paymentCompleted=true`, fulfill stock/cart, order vẫn `PENDING` (admin xác nhận sau)
+5. App → `GET /api/v1/payments/vnpay/verify/{orderId}` → `paymentStatus=SUCCESS` khi `paymentCompleted=true`
 
 ## Android emulator
 
