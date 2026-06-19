@@ -9,11 +9,10 @@ public class AddressMessageConstant {
     public static final String ADDRESS_SET_DEFAULT = "ADDRESS_SET_DEFAULT_SUCCESSFULLY";
 
     // Validation messages
-    public static final String RECEIVER_NAME_REQUIRED = "RECEIVER_NAME_IS_REQUIRED";
+    public static final String FULL_NAME_REQUIRED = "FULL_NAME_IS_REQUIRED";
     public static final String PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_IS_REQUIRED";
-    public static final String PROVINCE_REQUIRED = "PROVINCE_IS_REQUIRED";
+    public static final String CITY_REQUIRED = "CITY_IS_REQUIRED";
     public static final String DISTRICT_REQUIRED = "DISTRICT_IS_REQUIRED";
     public static final String WARD_REQUIRED = "WARD_IS_REQUIRED";
-    public static final String DETAIL_ADDRESS_REQUIRED = "DETAIL_ADDRESS_IS_REQUIRED";
-    public static final String ADDRESS_TYPE_REQUIRED = "ADDRESS_TYPE_IS_REQUIRED";
+    public static final String ADDRESS_LINE_REQUIRED = "ADDRESS_LINE_IS_REQUIRED";
 }

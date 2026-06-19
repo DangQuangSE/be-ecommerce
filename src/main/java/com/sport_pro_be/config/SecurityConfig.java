@@ -99,15 +99,21 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                List<String> originPatterns = new ArrayList<>(List.of(
-                        "http://localhost:*",
-                        "http://127.0.0.1:*"
-                ));
-                Arrays.stream(frontendUrl.split(","))
+                List<String> origins = Arrays.stream(frontendUrl.split(","))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
-                        .forEach(originPatterns::add);
-                configuration.setAllowedOriginPatterns(originPatterns);
+                        .toList();
+                
+                if (origins.contains("*")) {
+                        configuration.setAllowedOriginPatterns(List.of("*"));
+                } else if (origins.size() == 1 && origins.get(0).equals("http://localhost:3000")) {
+                        // Default development fallback: allow any local ports
+                        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+                } else {
+                        configuration.setAllowedOrigins(origins);
+                }
+
+
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "Accept-Language"));
                 configuration.setAllowCredentials(true);

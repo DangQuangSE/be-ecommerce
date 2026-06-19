@@ -9,6 +9,7 @@ import com.sport_pro_be.modules.user_address.constant.AddressMessageConstant;
 import com.sport_pro_be.modules.user_address.domain.UserAddress;
 import com.sport_pro_be.modules.user_address.dto.request.AddressRequest;
 import com.sport_pro_be.modules.user_address.dto.response.AddressResponse;
+import com.sport_pro_be.modules.user_address.enums.AddressType;
 import com.sport_pro_be.modules.user_address.interfaces.IAddressService;
 import com.sport_pro_be.modules.user_address.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class AddressService implements IAddressService {
     @Loggable(action = "CREATE_ADDRESS", module = "USER_ADDRESS")
     public AddressResponse createAddress(AddressRequest request) {
         User currentUser = SecurityUtils.getCurrentUser();
-        
+
         long count = addressRepository.countByUserId(currentUser.getId());
         if (count >= MAX_ADDRESSES) {
             throw new BadRequestException(AddressMessageConstant.ADDRESS_LIMIT_REACHED);
@@ -39,20 +40,20 @@ public class AddressService implements IAddressService {
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             addressRepository.resetDefaultByUserId(currentUser.getId());
         } else if (count == 0) {
-            // First address should be default
             request.setIsDefault(true);
         }
 
         UserAddress address = UserAddress.builder()
                 .user(currentUser)
-                .receiverName(request.getReceiverName())
+                .receiverName(request.getFullName())
                 .phoneNumber(request.getPhoneNumber())
-                .province(request.getProvince())
+                .province(request.getCity())
                 .district(request.getDistrict())
                 .ward(request.getWard())
-                .detailAddress(request.getDetailAddress())
+                .detailAddress(request.getAddressLine())
+                .label(request.getLabel())
                 .isDefault(request.getIsDefault())
-                .type(request.getType())
+                .type(AddressType.HOME)
                 .build();
 
         address = addressRepository.save(address);
@@ -71,14 +72,14 @@ public class AddressService implements IAddressService {
             addressRepository.resetDefaultByUserId(currentUser.getId());
         }
 
-        address.setReceiverName(request.getReceiverName());
+        address.setReceiverName(request.getFullName());
         address.setPhoneNumber(request.getPhoneNumber());
-        address.setProvince(request.getProvince());
+        address.setProvince(request.getCity());
         address.setDistrict(request.getDistrict());
         address.setWard(request.getWard());
-        address.setDetailAddress(request.getDetailAddress());
+        address.setDetailAddress(request.getAddressLine());
+        address.setLabel(request.getLabel());
         address.setIsDefault(request.getIsDefault());
-        address.setType(request.getType());
 
         address = addressRepository.save(address);
         return mapToResponse(address);
@@ -94,7 +95,6 @@ public class AddressService implements IAddressService {
 
         addressRepository.delete(address);
 
-        // If deleted address was default, set another one as default if exists
         if (Boolean.TRUE.equals(address.getIsDefault())) {
             List<UserAddress> addresses = addressRepository.findAllByUserIdOrderByIsDefaultDesc(currentUser.getId());
             if (!addresses.isEmpty()) {
@@ -135,14 +135,14 @@ public class AddressService implements IAddressService {
     private AddressResponse mapToResponse(UserAddress address) {
         return AddressResponse.builder()
                 .id(address.getId())
-                .receiverName(address.getReceiverName())
+                .fullName(address.getReceiverName())
                 .phoneNumber(address.getPhoneNumber())
-                .province(address.getProvince())
-                .district(address.getDistrict())
+                .addressLine(address.getDetailAddress())
                 .ward(address.getWard())
-                .detailAddress(address.getDetailAddress())
+                .district(address.getDistrict())
+                .city(address.getProvince())
+                .label(address.getLabel())
                 .isDefault(address.getIsDefault())
-                .type(address.getType())
                 .build();
     }
 }
