@@ -139,7 +139,7 @@ public class AdminProductController {
     @PatchMapping("/{id}/restore")
     public ApiResponse<Void> restoreProduct(@PathVariable Long id) {
         productService.restoreProduct(id);
-        return ApiResponse.of("Product restored successfully", null);
+        return ApiResponse.of(ProductMessageConstant.PRODUCT_RESTORED, null);
     }
 
     // Variants

@@ -12,7 +12,6 @@ public interface IReviewService {
     ReviewResponse createReview(Long userId, ReviewRequest request, List<MultipartFile> images);
     ReviewResponse updateReview(Long userId, Long reviewId, ReviewRequest request, List<MultipartFile> images);
     Page<ReviewResponse> getProductReviews(Long productId, Pageable pageable);
-    void deleteReview(Long reviewId);
     ReviewResponse replyReview(Long reviewId, String replyComment);
     Page<ReviewResponse> getAllReviews(Pageable pageable);
 }

@@ -14,4 +14,6 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     Page<Coupon> findAllByIsDeletedFalse(org.springframework.data.domain.Pageable pageable);
     
     java.util.Optional<Coupon> findByIdAndIsDeletedFalse(Long id);
+
+    java.util.List<Coupon> findAllByIsActiveTrueAndIsDeletedFalse();
 }
