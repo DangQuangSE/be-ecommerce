@@ -45,7 +45,10 @@ public class UserAddress extends AbstractAuditingEntity {
     @Builder.Default
     private Boolean isDefault = false;
 
+    @Column(length = 50)
+    private String label;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private AddressType type;
 }
