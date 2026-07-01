@@ -11,6 +11,8 @@ import com.sport_pro_be.modules.cart.domain.CartItem;
 import com.sport_pro_be.modules.cart.repository.CartRepository;
 import com.sport_pro_be.modules.order.domain.Order;
 import com.sport_pro_be.modules.order.domain.OrderItem;
+import com.sport_pro_be.modules.notification.service.NotificationService;
+import com.sport_pro_be.modules.notification.enums.NotificationType;
 import com.sport_pro_be.modules.order.dto.OrderItemResponse;
 import com.sport_pro_be.modules.order.dto.OrderRequest;
 import com.sport_pro_be.modules.order.dto.OrderResponse;
@@ -25,6 +27,7 @@ import com.sport_pro_be.modules.product.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +50,7 @@ public class OrderService implements IOrderService {
     private final ProductVariantRepository productVariantRepository;
     private final com.sport_pro_be.modules.coupon.interfaces.ICouponService couponService;
     private final com.sport_pro_be.modules.membership.interfaces.ITierService tierService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -164,6 +168,18 @@ public class OrderService implements IOrderService {
             cartRepository.save(cart);
         }
 
+        try {
+            notificationService.createAdminNotification(
+                    "Đơn hàng mới: #" + order.getId(),
+                    "Đơn hàng mới được đặt bởi " + (order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()),
+                    NotificationType.NEW_ORDER,
+                    order.getId(),
+                    order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create admin notification for order: {}", order.getId(), e);
+        }
+
         return mapToOrderResponse(order);
     }
 
@@ -213,6 +229,18 @@ public class OrderService implements IOrderService {
 
         order.setStatus(status);
         orderRepository.save(order);
+
+        try {
+            notificationService.createCustomerNotification(
+                    order.getUser().getId(),
+                    "Trạng thái đơn hàng",
+                    "Đơn hàng #" + order.getId() + " của bạn hiện đang ở trạng thái: " + status.name(),
+                    NotificationType.ORDER_STATUS_CHANGED,
+                    order.getId()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create customer notification for order: {}", order.getId(), e);
+        }
 
         return mapToOrderResponse(order);
     }
