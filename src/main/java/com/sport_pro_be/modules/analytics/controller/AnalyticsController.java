@@ -69,4 +69,10 @@ public class AnalyticsController {
         OrderStatsResponse data = analyticsService.getOrderStatistics(start, end);
         return ApiResponse.of(AnalyticsMessageConstant.GET_ORDER_STATS_SUCCESS, data);
     }
+
+    @GetMapping("/dashboard-summary")
+    public ApiResponse<com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse> getDashboardSummary() {
+        com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse data = analyticsService.getDashboardSummary();
+        return ApiResponse.of("Get dashboard summary successfully", data);
+    }
 }
