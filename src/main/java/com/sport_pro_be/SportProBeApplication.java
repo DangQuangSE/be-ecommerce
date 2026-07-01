@@ -10,12 +10,19 @@ import io.github.cdimascio.dotenv.Dotenv;
 @SpringBootApplication
 @PropertySources({
 		@PropertySource("classpath:application.properties"),
-		@PropertySource(value = "file:.env", ignoreResourceNotFound = true)
+		@PropertySource(value = "file:.env", ignoreResourceNotFound = true),
+		@PropertySource(value = "file:be-ecommerce/.env", ignoreResourceNotFound = true)
 })
 public class SportProBeApplication {
 
 	public static void main(String[] args) {
+		String envDir = "./";
+		if (!new java.io.File(".env").exists() && new java.io.File("be-ecommerce/.env").exists()) {
+			envDir = "./be-ecommerce";
+		}
+
 		Dotenv dotenv = Dotenv.configure()
+				.directory(envDir)
 				.ignoreIfMissing()
 				.load();
 		if (dotenv != null) {
@@ -33,6 +40,7 @@ public class SportProBeApplication {
 			setIfPresent("DB_NAME", dotenv.get("DB_NAME"));
 			setIfPresent("DB_USERNAME", dotenv.get("DB_USERNAME"));
 			setIfPresent("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
+			setIfPresent("MAIL_USERNAME", dotenv.get("MAIL_USERNAME"));
 			setIfPresent("MAIL_PASSWORD", dotenv.get("MAIL_PASSWORD"));
 			setIfPresent("APP_MAIL_FROM", dotenv.get("APP_MAIL_FROM"), dotenv.get("MAIL_FROM"));
 			setIfPresent("MAIL_HOST", dotenv.get("MAIL_HOST"));
