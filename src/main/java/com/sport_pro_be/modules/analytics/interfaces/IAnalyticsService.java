@@ -13,4 +13,5 @@ public interface IAnalyticsService {
     List<TopProductResponse> getTopSellingProducts(int limit);
     List<TrendingDesignResponse> getTrendingDesigns(int limit);
     OrderStatsResponse getOrderStatistics(LocalDate start, LocalDate end);
+    com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse getDashboardSummary();
 }

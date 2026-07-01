@@ -27,6 +27,7 @@ public class AnalyticsService implements IAnalyticsService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CustomDesignRepository customDesignRepository;
+    private final com.sport_pro_be.modules.auth.repository.UserRepository userRepository;
 
     @Override
     public List<RevenueReportResponse> getDailyRevenue(LocalDate start, LocalDate end) {
@@ -63,5 +64,44 @@ public class AnalyticsService implements IAnalyticsService {
         }
         
         return new OrderStatsResponse(totalOrders, statusCounts);
+    }
+
+    @Override
+    public com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse getDashboardSummary() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfThisWeek = now.minusDays(7);
+        LocalDateTime startOfLastWeek = startOfThisWeek.minusDays(7);
+
+        // This week stats
+        java.math.BigDecimal thisWeekRevenue = orderRepository.calculateTotalRevenue(startOfThisWeek, now);
+        long thisWeekOrders = orderRepository.countOrdersBetween(startOfThisWeek, now);
+        long thisWeekNewCustomers = userRepository.countUsersCreatedBetween(startOfThisWeek, now);
+
+        // Last week stats
+        java.math.BigDecimal lastWeekRevenue = orderRepository.calculateTotalRevenue(startOfLastWeek, startOfThisWeek);
+        long lastWeekOrders = orderRepository.countOrdersBetween(startOfLastWeek, startOfThisWeek);
+        long lastWeekNewCustomers = userRepository.countUsersCreatedBetween(startOfLastWeek, startOfThisWeek);
+
+        // Calculate growth
+        double revenueGrowth = calculateGrowth(thisWeekRevenue.doubleValue(), lastWeekRevenue.doubleValue());
+        double ordersGrowth = calculateGrowth(thisWeekOrders, lastWeekOrders);
+        double customersGrowth = calculateGrowth(thisWeekNewCustomers, lastWeekNewCustomers);
+
+        return new com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse(
+                thisWeekRevenue,
+                revenueGrowth,
+                thisWeekOrders,
+                ordersGrowth,
+                thisWeekNewCustomers,
+                customersGrowth
+        );
+    }
+
+    private double calculateGrowth(double current, double previous) {
+        if (previous == 0) {
+            return current > 0 ? 100.0 : 0.0;
+        }
+        double growth = ((current - previous) / previous) * 100.0;
+        return Math.round(growth * 10.0) / 10.0; // Round to 1 decimal place
     }
 }
