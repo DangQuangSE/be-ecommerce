@@ -7,6 +7,7 @@ public final class ShopConstant {
 
     public static final String SHOP_RETRIEVED = "Lấy thông tin cửa hàng thành công";
     public static final String SHOP_UPDATED = "Cập nhật thông tin cửa hàng thành công";
+    public static final String SHOP_IMAGE_UPLOADED = "Tải ảnh lên thành công";
 
     // Defaults for the first-ever shop profile.
     public static final String DEFAULT_NAME = "Sport Pro";
