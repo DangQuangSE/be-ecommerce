@@ -21,4 +21,7 @@ public class CustomDesignRequest {
 
     // Raw JSON string — tọa độ, font, màu sắc (optional, để có thể load lại editor)
     private String metadata;
+
+    // Separate metadata for back view layers
+    private String backMetadata;
 }
