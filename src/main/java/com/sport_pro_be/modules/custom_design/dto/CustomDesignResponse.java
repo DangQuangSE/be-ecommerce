@@ -14,6 +14,7 @@ public class CustomDesignResponse {
     private String designImageUrl;
     private String backDesignImageUrl;
     private String designMetadata;
+    private String backDesignMetadata;
     private Long printingMaterialId;
     private String printingMaterialName;
     private Integer numTextLines;

@@ -38,6 +38,9 @@ public class CustomDesign extends AbstractAuditingEntity {
     @Column(name = "design_metadata", columnDefinition = "TEXT")
     private String designMetadata;
 
+    @Column(name = "back_design_metadata", columnDefinition = "TEXT")
+    private String backDesignMetadata;
+
     @Column(name = "num_text_lines", nullable = false)
     private Integer numTextLines;
 
