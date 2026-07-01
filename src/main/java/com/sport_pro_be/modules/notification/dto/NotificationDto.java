@@ -16,6 +16,7 @@ public class NotificationDto {
     private Long relatedId;
     private Long userId; // null for Admin
     private boolean isRead;
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
     
     // Additional fields for backward compatibility with AdminNotificationMessage

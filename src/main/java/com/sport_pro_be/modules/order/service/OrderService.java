@@ -170,8 +170,8 @@ public class OrderService implements IOrderService {
 
         try {
             notificationService.createAdminNotification(
-                    "New Order: #" + order.getId(),
-                    "New order placed by " + (order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()),
+                    "Đơn hàng mới: #" + order.getId(),
+                    "Đơn hàng mới được đặt bởi " + (order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()),
                     NotificationType.NEW_ORDER,
                     order.getId(),
                     order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()
@@ -233,8 +233,8 @@ public class OrderService implements IOrderService {
         try {
             notificationService.createCustomerNotification(
                     order.getUser().getId(),
-                    "Order Status Updated",
-                    "Your order #" + order.getId() + " is now " + status.name(),
+                    "Trạng thái đơn hàng",
+                    "Đơn hàng #" + order.getId() + " của bạn hiện đang ở trạng thái: " + status.name(),
                     NotificationType.ORDER_STATUS_CHANGED,
                     order.getId()
             );
