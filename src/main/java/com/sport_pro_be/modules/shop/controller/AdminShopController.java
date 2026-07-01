@@ -1,7 +1,6 @@
 package com.sport_pro_be.modules.shop.controller;
 
 import com.sport_pro_be.common.ApiResponse;
-import com.sport_pro_be.modules.shop.constant.ShopConstant;
 import com.sport_pro_be.modules.shop.dto.ShopResponse;
 import com.sport_pro_be.modules.shop.dto.UpdateShopRequest;
 import com.sport_pro_be.modules.shop.service.IShopService;
@@ -22,6 +21,6 @@ public class AdminShopController {
 
     @PutMapping
     public ApiResponse<ShopResponse> updateShop(@Valid @RequestBody UpdateShopRequest request) {
-        return ApiResponse.of(ShopConstant.SHOP_UPDATED, shopService.updateShop(request));
+        return ApiResponse.of("Cập nhật thông tin cửa hàng thành công", shopService.updateShop(request));
     }
 }

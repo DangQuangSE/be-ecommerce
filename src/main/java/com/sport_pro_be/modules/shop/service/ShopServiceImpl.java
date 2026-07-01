@@ -1,6 +1,5 @@
 package com.sport_pro_be.modules.shop.service;
 
-import com.sport_pro_be.modules.shop.constant.ShopConstant;
 import com.sport_pro_be.modules.shop.domain.Shop;
 import com.sport_pro_be.modules.shop.dto.ShopResponse;
 import com.sport_pro_be.modules.shop.dto.UpdateShopRequest;
@@ -8,8 +7,6 @@ import com.sport_pro_be.modules.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -40,16 +37,10 @@ public class ShopServiceImpl implements IShopService {
     }
 
     private Shop getOrCreate() {
-        return shopRepository.findTopByOrderByIdAsc().orElseGet(() ->
-                shopRepository.save(Shop.builder()
-                        .name(ShopConstant.DEFAULT_NAME)
-                        .address(ShopConstant.DEFAULT_ADDRESS)
-                        .rating(new BigDecimal("5.0"))
-                        .ratingCount(0)
-                        .phone(ShopConstant.DEFAULT_PHONE)
-                        .openingHours(ShopConstant.DEFAULT_OPENING_HOURS)
-                        .description(ShopConstant.DEFAULT_DESCRIPTION)
-                        .build()));
+        // No shop configured yet: create an empty placeholder (all fields null,
+        // ratingCount defaults to 0) for the admin to fill in later.
+        return shopRepository.findTopByOrderByIdAsc()
+                .orElseGet(() -> shopRepository.save(Shop.builder().build()));
     }
 
     private ShopResponse toResponse(Shop s) {
