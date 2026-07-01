@@ -140,6 +140,9 @@ public class ReviewService implements IReviewService {
     }
 
     private ReviewResponse mapToResponse(ProductReview review) {
+        List<String> images = review.getImages() == null
+                ? List.of()
+                : new ArrayList<>(review.getImages());
         String name = "Guest";
         if (review.getUser().getFirstName() != null && review.getUser().getLastName() != null) {
             name = review.getUser().getFirstName() + " " + review.getUser().getLastName();
@@ -155,7 +158,7 @@ public class ReviewService implements IReviewService {
                 .userAvatar(review.getUser().getAvatar())
                 .rating(review.getRating())
                 .comment(review.getComment())
-                .images(review.getImages())
+                .images(images)
                 .replyComment(review.getReplyComment())
                 .createdAt(review.getCreatedAt())
                 .build();

@@ -256,6 +256,7 @@ public class ProductService implements IProductService {
                                 .status(product.getStatus().name())
                                 .totalStock(totalStock)
                                 .averageRating(product.getAverageRating())
+                                .reviewCount(product.getReviewCount())
                                 .isFeatured(product.getIsFeatured())
                                 .isCustomizable(product.getCategory() != null && product.getCategory().isCustomizable())
                                 .build();
