@@ -51,5 +51,12 @@ public class User extends AbstractAuditingEntity {
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean isActive = true;
+
+    public String getFullName() {
+        if (firstName == null && lastName == null) return "Unknown User";
+        if (firstName == null) return lastName;
+        if (lastName == null) return firstName;
+        return firstName + " " + lastName;
+    }
 }
 

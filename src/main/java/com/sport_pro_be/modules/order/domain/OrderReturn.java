@@ -53,5 +53,6 @@ public class OrderReturn extends AbstractAuditingEntity {
     @ElementCollection
     @CollectionTable(name = "return_images", joinColumns = @JoinColumn(name = "return_id"))
     @Column(name = "image_url")
+    @Builder.Default
     private List<String> images = new ArrayList<>();
 }

@@ -62,6 +62,7 @@ public class Order extends AbstractAuditingEntity {
     private com.sport_pro_be.modules.coupon.domain.Coupon coupon;
 
     @Column(name = "discount_amount", precision = 15, scale = 2)
+    @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @Column(name = "vnp_txn_ref", length = 64)
