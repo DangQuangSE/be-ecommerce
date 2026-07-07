@@ -10,4 +10,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     List<Conversation> findByCustomerIdOrderByLastMessageAtDesc(Long customerId);
 
     List<Conversation> findAllByOrderByLastMessageAtDesc();
+
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM Conversation c WHERE c.lastMessage != :excludedMessage ORDER BY c.lastMessageAt DESC")
+    List<Conversation> findActiveConversations(@org.springframework.data.repository.query.Param("excludedMessage") String excludedMessage);
 }
