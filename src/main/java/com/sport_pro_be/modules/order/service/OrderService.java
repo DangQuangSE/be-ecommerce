@@ -278,11 +278,16 @@ public class OrderService implements IOrderService {
 
         orderRepository.save(order);
 
+        String customerMessage = "Đơn hàng #" + order.getId() + " của bạn đã được hủy thành công.";
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.isPaymentCompleted()) {
+            customerMessage += " Nhân viên sẽ liên hệ hoàn tiền qua số điện thoại đặt hàng của bạn.";
+        }
+
         try {
             notificationService.createCustomerNotification(
                     order.getUser().getId(),
                     "Đơn hàng đã được hủy",
-                    "Đơn hàng #" + order.getId() + " của bạn đã được hủy thành công.",
+                    customerMessage,
                     NotificationType.ORDER_STATUS_CHANGED,
                     order.getId()
             );
