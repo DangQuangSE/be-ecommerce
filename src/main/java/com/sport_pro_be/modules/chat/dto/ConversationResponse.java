@@ -16,6 +16,7 @@ public class ConversationResponse {
     private String avatar;
 
     private String lastMessage;
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime lastMessageAt;
 
     /// Unread count for the requesting viewer.

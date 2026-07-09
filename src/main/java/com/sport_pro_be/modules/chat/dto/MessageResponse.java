@@ -22,5 +22,6 @@ public class MessageResponse {
     /// True when the requesting user authored this message (drives `isMe` on FE).
     private boolean mine;
 
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
 }
