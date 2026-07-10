@@ -13,6 +13,7 @@ public interface IOrderService {
     Page<OrderResponse> getAllOrders(String search, OrderStatus status, Pageable pageable);
     OrderResponse getOrderDetailsAdmin(Long orderId);
     OrderResponse updateOrderStatus(Long orderId, OrderStatus status);
+    OrderResponse cancelOrder(Long userId, Long orderId, String reason);
 
     void fulfillOrder(Long orderId);
 }

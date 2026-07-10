@@ -4,6 +4,7 @@ import com.sport_pro_be.common.AbstractAuditingEntity;
 import com.sport_pro_be.modules.auth.domain.User;
 import com.sport_pro_be.modules.order.enums.OrderStatus;
 import com.sport_pro_be.modules.order.enums.PaymentMethod;
+import com.sport_pro_be.modules.order.enums.RefundStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -68,7 +69,15 @@ public class Order extends AbstractAuditingEntity {
     @Column(name = "vnp_txn_ref", length = 64)
     private String vnpTxnRef;
 
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status", length = 20)
+    private RefundStatus refundStatus;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 20)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 }
