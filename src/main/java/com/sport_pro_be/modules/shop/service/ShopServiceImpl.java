@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +42,9 @@ public class ShopServiceImpl implements IShopService {
         Shop shop = getOrCreate();
         shop.setName(request.name());
         shop.setAddress(request.address());
+        shop.setLatitude(request.latitude());
+        shop.setLongitude(request.longitude());
+        shop.setPlaceId(request.placeId());
         shop.setPhone(request.phone());
         shop.setOpeningHours(request.openingHours());
         shop.setDescription(request.description());
@@ -58,6 +63,8 @@ public class ShopServiceImpl implements IShopService {
                 shopRepository.save(Shop.builder()
                         .name(ShopConstant.DEFAULT_NAME)
                         .address(ShopConstant.DEFAULT_ADDRESS)
+                        .latitude(new BigDecimal(ShopConstant.DEFAULT_LATITUDE))
+                        .longitude(new BigDecimal(ShopConstant.DEFAULT_LONGITUDE))
                         .rating(new BigDecimal("5.0"))
                         .ratingCount(0)
                         .phone(ShopConstant.DEFAULT_PHONE)
@@ -71,6 +78,10 @@ public class ShopServiceImpl implements IShopService {
                 .id(s.getId())
                 .name(s.getName())
                 .address(s.getAddress())
+                .latitude(s.getLatitude())
+                .longitude(s.getLongitude())
+                .placeId(s.getPlaceId())
+                .directionsUrl(buildDirectionsUrl(s))
                 .rating(s.getRating())
                 .ratingCount(s.getRatingCount())
                 .phone(s.getPhone())
@@ -79,5 +90,26 @@ public class ShopServiceImpl implements IShopService {
                 .logoUrl(s.getLogoUrl())
                 .coverUrl(s.getCoverUrl())
                 .build();
+    }
+
+    /// Google Maps "directions to" deep link. Prefers lat/long (precise pin);
+    /// falls back to the address text when coordinates haven't been set yet.
+    private String buildDirectionsUrl(Shop s) {
+        String destination;
+        if (s.getLatitude() != null && s.getLongitude() != null) {
+            destination = s.getLatitude().toPlainString() + "," + s.getLongitude().toPlainString();
+        } else if (s.getAddress() != null && !s.getAddress().isBlank()) {
+            destination = s.getAddress();
+        } else {
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder(ShopConstant.MAPS_DIRECTIONS_BASE_URL)
+                .append(URLEncoder.encode(destination, StandardCharsets.UTF_8));
+        if (s.getPlaceId() != null && !s.getPlaceId().isBlank()) {
+            url.append(ShopConstant.MAPS_DIRECTIONS_PLACE_ID_PARAM)
+                    .append(URLEncoder.encode(s.getPlaceId(), StandardCharsets.UTF_8));
+        }
+        return url.toString();
     }
 }

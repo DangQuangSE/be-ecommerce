@@ -67,6 +67,21 @@ UPDATE app_users SET role = 'ADMIN' WHERE email = 'your-email@gmail.com';
 
 Nếu email đã tồn tại với role `USER`, seeder **không** tự nâng lên `ADMIN` — dùng SQL hoặc đổi email trong `.env`.
 
+### Tạo Sample Customer Users
+
+**Seeder tự động (chỉ dev/local):**
+
+Thêm vào `.env`:
+
+```env
+APP_CUSTOMER_SEED_ENABLED=true
+APP_CUSTOMER_PASSWORD=Customer@123456
+```
+
+Restart API. Seeder tạo hai tài khoản `USER` cố định: `customer1@sportpro.local` và `customer2@sportpro.local` với password từ `APP_CUSTOMER_PASSWORD`. Chỉ bật trên môi trường dev — **không** set `APP_CUSTOMER_SEED_ENABLED=true` trên production.
+
+Đăng nhập: `POST /api/auth/login` với email/password trên.
+
 ### Xem danh sách users:
 
 ```sql

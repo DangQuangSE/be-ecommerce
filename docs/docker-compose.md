@@ -21,6 +21,7 @@ cp .env.example .env
 - `CLOUDINARY_*` — nếu dùng upload ảnh
 - Các biến `APP_REFRESH_TOKEN_*`, `APP_FORGOT_PASSWORD_*`
 - **Admin seed (tùy chọn, chỉ dev):** `APP_ADMIN_SEED_ENABLED=true`, `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` — tạo tài khoản admin khi API khởi động (xem `.env.example`)
+- **Customer seed (tùy chọn, chỉ dev):** `APP_CUSTOMER_SEED_ENABLED=true`, `APP_CUSTOMER_PASSWORD` — tạo hai tài khoản sample user (`customer1@sportpro.local`, `customer2@sportpro.local`) khi API khởi động (xem `.env.example`)
 
 **`DB_HOST` trong `.env`:** giữ `localhost` khi chạy API bằng IDE/`mvnw`. Docker Compose **tự ghi đè** `DB_HOST=database_postgre` cho service `api` — không cần sửa tay khi dùng compose.
 
