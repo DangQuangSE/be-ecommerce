@@ -36,3 +36,6 @@ build/
 !.env.example
 *.pem
 
+# Claude Code project configuration (agent/skill configs, local to each dev)
+.claude/
+

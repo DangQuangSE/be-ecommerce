@@ -27,6 +27,18 @@ public class Shop extends AbstractAuditingEntity {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    /// Store location — latitude (-90..90). Nullable so pre-geo rows survive.
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    /// Store location — longitude (-180..180). Nullable so pre-geo rows survive.
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
+
+    /// Google Place ID for the store location (optional, for precise directions).
+    @Column(name = "place_id", length = 255)
+    private String placeId;
+
     /// Display rating 0.0–5.0 (set manually by the admin).
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
