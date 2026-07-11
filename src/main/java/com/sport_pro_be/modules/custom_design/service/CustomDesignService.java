@@ -118,7 +118,7 @@ public class CustomDesignService implements ICustomDesignService {
         PrintingMaterial material = materialRepository.findById(request.getMaterialId())
                 .orElseThrow(() -> new AppException(CustomDesignMessageConstant.MATERIAL_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        BigDecimal totalPrintingPrice = calculatePrintingPrice(material, request.getNumTextLines(), request.getNumImages());
+        BigDecimal totalPrintingPrice = calculatePrintingPrice(request.getNumTextLines(), request.getNumImages());
 
         CustomDesign design = CustomDesign.builder()
                 .user(user)
@@ -139,17 +139,19 @@ public class CustomDesignService implements ICustomDesignService {
 
     /**
      * Formula:
-     * totalPrintingPrice = material.basePrice
+     * totalPrintingPrice = 0
      *                    + (numTextLines × PriceConfig[TEXT].unitPrice)
      *                    + (numImages    × PriceConfig[IMAGE].unitPrice)
      */
-    private BigDecimal calculatePrintingPrice(PrintingMaterial material, int numTextLines, int numImages) {
+    private BigDecimal calculatePrintingPrice(int numTextLines, int numImages) {
         BigDecimal textUnitPrice = getUnitPrice(PrintingElementType.TEXT);
         BigDecimal imageUnitPrice = getUnitPrice(PrintingElementType.IMAGE);
 
-        return material.getBasePrice()
-                .add(textUnitPrice.multiply(BigDecimal.valueOf(numTextLines)))
-                .add(imageUnitPrice.multiply(BigDecimal.valueOf(numImages)));
+        return PrintingPriceCalculator.calculate(
+                numTextLines,
+                numImages,
+                textUnitPrice,
+                imageUnitPrice);
     }
 
     private BigDecimal getUnitPrice(PrintingElementType type) {
