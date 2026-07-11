@@ -5,6 +5,7 @@ import com.sport_pro_be.common.SecurityUtils;
 import com.sport_pro_be.modules.order.constant.OrderMessageConstant;
 import com.sport_pro_be.modules.order.dto.OrderRequest;
 import com.sport_pro_be.modules.order.dto.OrderResponse;
+import com.sport_pro_be.modules.order.dto.CancelOrderRequest;
 import com.sport_pro_be.modules.order.interfaces.IOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,5 +47,14 @@ public class OrderController {
         Long userId = SecurityUtils.getCurrentUserId();
         OrderResponse response = orderService.getOrderDetails(userId, orderId);
         return ResponseEntity.ok(ApiResponse.of(OrderMessageConstant.ORDER_DETAILS_RETRIEVED, response));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
+            @PathVariable Long orderId,
+            @Valid @RequestBody CancelOrderRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        OrderResponse response = orderService.cancelOrder(userId, orderId, request.getCancelReason());
+        return ResponseEntity.ok(ApiResponse.of("Order cancelled successfully", response));
     }
 }

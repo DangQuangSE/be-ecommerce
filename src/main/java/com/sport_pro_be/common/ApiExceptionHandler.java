@@ -8,8 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +44,22 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
         return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "Tham số '" + ex.getName() + "' không hợp lệ";
+        log.warn("Invalid request parameter: {}", message);
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(message, null, Instant.now()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        String message = "Thiếu tham số bắt buộc '" + ex.getParameterName() + "'";
+        log.warn("Missing request parameter: {}", message);
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(message, null, Instant.now()));
     }
 
     @ExceptionHandler(PropertyReferenceException.class)

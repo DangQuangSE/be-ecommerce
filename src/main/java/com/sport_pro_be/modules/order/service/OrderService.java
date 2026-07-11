@@ -247,6 +247,71 @@ public class OrderService implements IOrderService {
 
     @Override
     @Transactional
+    @Loggable(action = "CANCEL_ORDER", module = "ORDER")
+    public OrderResponse cancelOrder(Long userId, Long orderId, String reason) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
+
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PROCESSING) {
+            throw new BadRequestException("Order cannot be cancelled in its current status");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelReason(reason);
+
+        boolean stockWasDecremented = true;
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && !order.isPaymentCompleted()) {
+            stockWasDecremented = false;
+        }
+
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.isPaymentCompleted()) {
+            order.setRefundStatus(com.sport_pro_be.modules.order.enums.RefundStatus.PENDING);
+        }
+
+        if (stockWasDecremented) {
+            for (OrderItem item : order.getItems()) {
+                ProductVariant variant = item.getProductVariant();
+                variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
+                productVariantRepository.save(variant);
+            }
+        }
+
+        orderRepository.save(order);
+
+        String customerMessage = "Đơn hàng #" + order.getId() + " của bạn đã được hủy thành công.";
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.isPaymentCompleted()) {
+            customerMessage += " Nhân viên sẽ liên hệ hoàn tiền qua số điện thoại đặt hàng của bạn.";
+        }
+
+        try {
+            notificationService.createCustomerNotification(
+                    order.getUser().getId(),
+                    "Đơn hàng đã được hủy",
+                    customerMessage,
+                    NotificationType.ORDER_STATUS_CHANGED,
+                    order.getId()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create customer notification for cancelled order: {}", order.getId(), e);
+        }
+
+        try {
+            notificationService.createAdminNotification(
+                    "Đơn hàng bị hủy: #" + order.getId(),
+                    "Khách hàng đã hủy đơn hàng với lý do: " + reason,
+                    NotificationType.ORDER_CANCELLED,
+                    order.getId(),
+                    order.getCustomerName() != null ? order.getCustomerName() : order.getUser().getFullName()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create admin notification for cancelled order: {}", order.getId(), e);
+        }
+
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
     public void fulfillOrder(Long orderId) {
         Order order = orderRepository.findFulfillmentGraphById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
@@ -339,6 +404,8 @@ public class OrderService implements IOrderService {
                 .paymentMethod(order.getPaymentMethod())
                 .vnpTxnRef(order.getVnpTxnRef())
                 .createdAt(order.getCreatedAt())
+                .cancelReason(order.getCancelReason())
+                .refundStatus(order.getRefundStatus())
                 .items(itemResponses)
                 .build();
     }

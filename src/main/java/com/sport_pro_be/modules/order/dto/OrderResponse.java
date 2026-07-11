@@ -2,6 +2,7 @@ package com.sport_pro_be.modules.order.dto;
 
 import com.sport_pro_be.modules.order.enums.OrderStatus;
 import com.sport_pro_be.modules.order.enums.PaymentMethod;
+import com.sport_pro_be.modules.order.enums.RefundStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,5 +23,7 @@ public class OrderResponse {
     private PaymentMethod paymentMethod;
     private String vnpTxnRef;
     private LocalDateTime createdAt;
+    private String cancelReason;
+    private RefundStatus refundStatus;
     private List<OrderItemResponse> items;
 }

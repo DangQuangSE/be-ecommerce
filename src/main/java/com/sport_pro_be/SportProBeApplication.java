@@ -28,6 +28,9 @@ public class SportProBeApplication {
 			setIfPresent("APP_ADMIN_SEED_ENABLED", dotenv.get("APP_ADMIN_SEED_ENABLED"));
 			setIfPresent("APP_ADMIN_EMAIL", dotenv.get("APP_ADMIN_EMAIL"));
 			setIfPresent("APP_ADMIN_PASSWORD", dotenv.get("APP_ADMIN_PASSWORD"));
+			setIfPresent("APP_CUSTOMER_SEED_ENABLED", dotenv.get("APP_CUSTOMER_SEED_ENABLED"));
+			setIfPresent("APP_CUSTOMER_EMAIL", dotenv.get("APP_CUSTOMER_EMAIL"));
+			setIfPresent("APP_CUSTOMER_PASSWORD", dotenv.get("APP_CUSTOMER_PASSWORD"));
 			setIfPresent("DB_HOST", dotenv.get("DB_HOST"));
 			setIfPresent("DB_PORT", dotenv.get("DB_PORT"));
 			setIfPresent("DB_NAME", dotenv.get("DB_NAME"));
@@ -42,6 +45,7 @@ public class SportProBeApplication {
 			setIfPresent("CLOUDINARY_CLOUD_NAME", dotenv.get("CLOUDINARY_CLOUD_NAME"));
 			setIfPresent("CLOUDINARY_API_KEY", dotenv.get("CLOUDINARY_API_KEY"));
 			setIfPresent("CLOUDINARY_API_SECRET", dotenv.get("CLOUDINARY_API_SECRET"));
+			setIfPresent("MAPBOX_ACCESS_TOKEN", dotenv.get("MAPBOX_ACCESS_TOKEN"));
 			setIfPresent("VNPAY_TMN_CODE", dotenv.get("VNPAY_TMN_CODE"));
 			setIfPresent("VNPAY_HASH_SECRET", dotenv.get("VNPAY_HASH_SECRET"));
 			setIfPresent("VNPAY_PAY_URL", dotenv.get("VNPAY_PAY_URL"));
