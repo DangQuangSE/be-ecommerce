@@ -43,7 +43,7 @@ public class ChatServiceImpl implements IChatService {
         boolean adminView = user.getRole() == Role.ADMIN;
 
         List<Conversation> conversations = adminView
-                ? conversationRepository.findAllByOrderByLastMessageAtDesc()
+                ? conversationRepository.findActiveConversations(ChatConstant.WELCOME_MESSAGE)
                 : conversationRepository.findByCustomerIdOrderByLastMessageAtDesc(user.getId());
 
         if (!adminView && conversations.isEmpty()) {

@@ -12,7 +12,6 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    @EntityGraph(attributePaths = {"items", "items.productVariant", "items.productVariant.product"})
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"items", "items.productVariant", "items.productVariant.product"})
@@ -38,12 +37,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     })
     Optional<Order> findFulfillmentGraphById(Long id);
 
-    @EntityGraph(attributePaths = {
-            "items",
-            "items.productVariant",
-            "items.productVariant.product",
-            "items.customDesign"
-    })
     @org.springframework.data.jpa.repository.Query(
         "SELECT o FROM Order o WHERE " +
         "(:status IS NULL OR o.status = :status) AND " +
