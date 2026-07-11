@@ -39,5 +39,10 @@ public class AdminCategoryController {
         categoryService.updateStatus(id, isActive);
         return ApiResponse.of(CategoryConstant.UPDATE_STATUS_SUCCESS, null);
     }
-}
 
+    @PostMapping("/upload-image")
+    public ApiResponse<java.util.Map<String, String>> uploadImage(@RequestParam org.springframework.web.multipart.MultipartFile file) {
+        String url = categoryService.uploadCategoryImage(file);
+        return ApiResponse.of("Image uploaded successfully", java.util.Map.of("url", url));
+    }
+}
