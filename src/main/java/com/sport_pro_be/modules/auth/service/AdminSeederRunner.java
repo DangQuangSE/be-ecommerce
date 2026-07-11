@@ -44,20 +44,29 @@ public class AdminSeederRunner implements CommandLineRunner {
         }
 
         String normalizedEmail = normalizeEmail(adminEmail);
-        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-            log.info("Admin user already exists for email {}. Skipping seed.", normalizedEmail);
-            return;
+        if (!userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            User admin = new User();
+            admin.setEmail(normalizedEmail);
+            admin.setPasswordHash(passwordEncoder.encode(adminPassword));
+            admin.setRole(Role.ADMIN);
+            admin.setEmailVerified(true);
+            admin.setActive(true);
+            userRepository.save(admin);
+            log.info("Successfully seeded admin user for email {}.", normalizedEmail);
         }
 
-        User admin = new User();
-        admin.setEmail(normalizedEmail);
-        admin.setPasswordHash(passwordEncoder.encode(adminPassword));
-        admin.setRole(Role.ADMIN);
-        admin.setEmailVerified(true);
-        admin.setActive(true);
-        userRepository.save(admin);
-
-        log.info("Successfully seeded admin user for email {}.", normalizedEmail);
+        // Seed test user
+        String testEmail = "test@sportpro.com";
+        if (!userRepository.existsByEmailIgnoreCase(testEmail)) {
+            User testUser = new User();
+            testUser.setEmail(testEmail);
+            testUser.setPasswordHash(passwordEncoder.encode("Test@123456"));
+            testUser.setRole(Role.USER);
+            testUser.setEmailVerified(true);
+            testUser.setActive(true);
+            userRepository.save(testUser);
+            log.info("Successfully seeded test user for email {}.", testEmail);
+        }
     }
 
     private String normalizeEmail(String email) {
