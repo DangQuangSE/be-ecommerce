@@ -62,4 +62,27 @@ public class CustomDesignController {
         CustomDesignResponse response = customDesignService.getDesignDetail(userId, id);
         return ResponseEntity.ok(ApiResponse.of(null, response));
     }
+
+    /**
+     * POST /api/custom-designs/logo
+     * Uploads a single logo asset (used while customizing, before the design itself is saved).
+     * Returns the durable secure URL to store in the client-side design metadata.
+     */
+    @PostMapping(value = "/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadLogo(@RequestPart("file") MultipartFile file) {
+        String url = customDesignService.uploadLogo(file);
+        return ResponseEntity.ok(ApiResponse.of(CustomDesignMessageConstant.LOGO_UPLOADED_SUCCESS, url));
+    }
+
+    /**
+     * DELETE /api/custom-designs/logo
+     * Deletes a previously uploaded logo asset (e.g. the customer removed the layer, or reset
+     * the canvas, before saving). Scoped to the logo upload folder only — see
+     * {@link com.sport_pro_be.modules.custom_design.service.CustomDesignService#deleteLogo}.
+     */
+    @DeleteMapping("/logo")
+    public ResponseEntity<ApiResponse<Void>> deleteLogo(@RequestParam("url") String url) {
+        customDesignService.deleteLogo(url);
+        return ResponseEntity.ok(ApiResponse.of(CustomDesignMessageConstant.LOGO_DELETED_SUCCESS, null));
+    }
 }

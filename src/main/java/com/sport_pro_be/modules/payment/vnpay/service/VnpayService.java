@@ -7,6 +7,7 @@ import com.sport_pro_be.modules.order.enums.OrderStatus;
 import com.sport_pro_be.modules.order.enums.PaymentMethod;
 import com.sport_pro_be.modules.order.interfaces.IOrderService;
 import com.sport_pro_be.modules.order.repository.OrderRepository;
+import com.sport_pro_be.modules.order.service.OrderTransitionService;
 import com.sport_pro_be.modules.payment.vnpay.config.VnpayProperties;
 import com.sport_pro_be.modules.payment.vnpay.constant.VnpayMessageConstant;
 import com.sport_pro_be.modules.payment.vnpay.dto.VnpayCreateResponse;
@@ -22,6 +23,8 @@ import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -39,11 +42,15 @@ public class VnpayService {
     private static final String VNP_ORDER_TYPE = "other";
     private static final String VNP_LOCALE = "vn";
     private static final String VNP_RESPONSE_SUCCESS = "00";
+    private static final String VNP_TRANSACTION_SUCCESS = "00";
     private static final DateTimeFormatter CREATE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final VnpayProperties vnpayProperties;
     private final OrderRepository orderRepository;
     private final IOrderService orderService;
+    private final OrderTransitionService orderTransitionService;
+    private final Clock clock;
+    private final ZoneId businessZoneId;
 
     @Transactional
     public VnpayCreateResponse createPaymentUrl(Long userId, Long orderId, String clientIp) {
@@ -78,7 +85,7 @@ public class VnpayService {
             return VnpayIpnResponse.error("01", "Order not Found");
         }
 
-        Order order = orderRepository.findByVnpTxnRef(txnRef)
+        Order order = orderRepository.findByVnpTxnRefForUpdate(txnRef)
                 .orElse(null);
         if (order == null) {
             log.warn("VNPay IPN order not found for txnRef={}", txnRef);
@@ -86,7 +93,8 @@ public class VnpayService {
         }
 
         String responseCode = params.get("vnp_ResponseCode");
-        if (VNP_RESPONSE_SUCCESS.equals(responseCode)) {
+        if (VNP_RESPONSE_SUCCESS.equals(responseCode)
+                && VNP_TRANSACTION_SUCCESS.equals(params.get("vnp_TransactionStatus"))) {
             if (order.isPaymentCompleted()) {
                 return VnpayIpnResponse.success();
             }
@@ -94,9 +102,7 @@ public class VnpayService {
                 log.warn("VNPay IPN amount mismatch for orderId={}", order.getId());
                 return VnpayIpnResponse.error("04", "Invalid Amount");
             }
-            orderService.fulfillOrder(order.getId());
-            order.setPaymentCompleted(true);
-            orderRepository.save(order);
+            orderTransitionService.recordVerifiedPayment(order.getId());
             return VnpayIpnResponse.success();
         }
 
@@ -104,8 +110,7 @@ public class VnpayService {
             return VnpayIpnResponse.success();
         }
         if (order.getStatus() == OrderStatus.PENDING) {
-            order.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(order);
+            orderTransitionService.updateStatus(order.getId(), OrderStatus.CANCELLED);
         }
         return VnpayIpnResponse.success();
     }
@@ -170,7 +175,7 @@ public class VnpayService {
         params.put("vnp_Locale", VNP_LOCALE);
         params.put("vnp_ReturnUrl", vnpayProperties.getReturnUrl());
         params.put("vnp_IpAddr", clientIp != null && !clientIp.isBlank() ? clientIp : "127.0.0.1");
-        params.put("vnp_CreateDate", LocalDateTime.now().format(CREATE_DATE_FORMAT));
+        params.put("vnp_CreateDate", LocalDateTime.ofInstant(clock.instant(), businessZoneId).format(CREATE_DATE_FORMAT));
 
         String secureHash = VnpayHashUtil.signParams(params, vnpayProperties.getHashSecret());
         params.put("vnp_SecureHash", secureHash);

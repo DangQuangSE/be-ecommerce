@@ -33,5 +33,16 @@ public interface ICustomDesignService {
      * Returns the details of a specific design for administration/printing purposes (no ownership check).
      */
     CustomDesignResponse getDesignDetailAdmin(Long designId);
+
+    /**
+     * Uploads a single logo asset to durable storage and returns its secure URL.
+     */
+    String uploadLogo(MultipartFile file);
+
+    /**
+     * Deletes a logo asset previously uploaded via {@link #uploadLogo}. Rejects any URL
+     * outside the logo upload folder to prevent deleting unrelated assets (IDOR guard).
+     */
+    void deleteLogo(String url);
 }
 

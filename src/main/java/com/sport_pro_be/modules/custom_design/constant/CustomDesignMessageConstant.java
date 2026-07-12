@@ -26,4 +26,11 @@ public final class CustomDesignMessageConstant {
 
     // Upload
     public static final String UPLOAD_FOLDER = "custom_designs";
+    public static final String LOGO_UPLOAD_FOLDER = "custom_design_logos";
+
+    // Logo
+    public static final String LOGO_UPLOADED_SUCCESS = "Logo uploaded successfully.";
+    public static final String LOGO_DELETED_SUCCESS = "Logo deleted successfully.";
+    public static final String LOGO_URL_REQUIRED = "Logo URL is required.";
+    public static final String LOGO_URL_INVALID_SCOPE = "Logo URL is not a valid custom-design logo asset.";
 }

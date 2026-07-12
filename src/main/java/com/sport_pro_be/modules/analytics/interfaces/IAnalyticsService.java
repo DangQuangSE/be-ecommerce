@@ -7,6 +7,7 @@ import com.sport_pro_be.modules.analytics.dto.TrendingDesignResponse;
 
 import java.time.LocalDate;
 import java.util.List;
+import com.sport_pro_be.modules.analytics.dto.RevenueSummaryResponse;
 
 public interface IAnalyticsService {
     List<RevenueReportResponse> getDailyRevenue(LocalDate start, LocalDate end);
@@ -14,4 +15,5 @@ public interface IAnalyticsService {
     List<TrendingDesignResponse> getTrendingDesigns(int limit);
     OrderStatsResponse getOrderStatistics(LocalDate start, LocalDate end);
     com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse getDashboardSummary();
+    RevenueSummaryResponse getRevenueSummary(LocalDate startDate, LocalDate endDate);
 }
