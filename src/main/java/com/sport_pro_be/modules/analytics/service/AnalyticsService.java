@@ -95,7 +95,7 @@ public class AnalyticsService implements IAnalyticsService {
 
     private void validateRange(LocalDate start, LocalDate end) {
         if (start == null || end == null || start.isAfter(end)) throw new BadRequestException("Invalid date range");
-        if (ChronoUnit.DAYS.between(start, end) + 1 > 366L * 5) throw new BadRequestException("Date range cannot exceed 5 years");
+        if (end.isAfter(start.plusYears(5).minusDays(1))) throw new BadRequestException("Date range cannot exceed 5 years");
     }
 
     private static final class MutableBucket {
@@ -105,9 +105,9 @@ public class AnalyticsService implements IAnalyticsService {
 
     @Override
     public List<RevenueReportResponse> getDailyRevenue(LocalDate start, LocalDate end) {
-        LocalDateTime startDateTime = start.atStartOfDay();
-        LocalDateTime endDateTime = end.atTime(LocalTime.MAX);
-        return orderRepository.calculateDailyRevenue(startDateTime, endDateTime);
+        return getRevenueSummary(start, end).points().stream()
+                .map(point -> new RevenueReportResponse(point.bucketStart(), point.revenue()))
+                .toList();
     }
 
     @Override
@@ -158,7 +158,7 @@ public class AnalyticsService implements IAnalyticsService {
         long lastWeekNewCustomers = userRepository.countUsersCreatedBetween(startOfLastWeek, startOfThisWeek);
 
         // Calculate growth
-        double revenueGrowth = calculateGrowth(thisWeekRevenue.doubleValue(), lastWeekRevenue.doubleValue());
+        double revenueGrowth = calculateGrowth(thisWeekRevenue, lastWeekRevenue).doubleValue();
         double ordersGrowth = calculateGrowth(thisWeekOrders, lastWeekOrders);
         double customersGrowth = calculateGrowth(thisWeekNewCustomers, lastWeekNewCustomers);
 
@@ -178,5 +178,11 @@ public class AnalyticsService implements IAnalyticsService {
         }
         double growth = ((current - previous) / previous) * 100.0;
         return Math.round(growth * 10.0) / 10.0; // Round to 1 decimal place
+    }
+
+    private BigDecimal calculateGrowth(BigDecimal current, BigDecimal previous) {
+        if (previous.signum() == 0) return current.signum() > 0 ? BigDecimal.valueOf(100) : BigDecimal.ZERO;
+        return current.subtract(previous).multiply(BigDecimal.valueOf(100))
+                .divide(previous, 1, RoundingMode.HALF_UP);
     }
 }
