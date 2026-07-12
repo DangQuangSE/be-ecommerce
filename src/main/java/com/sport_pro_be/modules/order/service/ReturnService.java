@@ -26,13 +26,13 @@ public class ReturnService implements IReturnService {
 
     private final OrderReturnRepository returnRepository;
     private final OrderRepository orderRepository;
+    private final OrderTransitionService orderTransitionService;
 
     @Override
     @Transactional
     @Loggable(action = "REQUEST_RETURN", module = "ORDER_RETURN")
     public ReturnResponse requestReturn(Long userId, ReturnRequest request) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
+        Order order = orderTransitionService.lock(request.getOrderId());
 
         if (!order.getUser().getId().equals(userId)) {
             throw new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND);
@@ -59,8 +59,7 @@ public class ReturnService implements IReturnService {
         orderReturn = returnRepository.save(orderReturn);
         
         // Update order status
-        order.setStatus(OrderStatus.RETURN_REQUESTED);
-        orderRepository.save(order);
+        orderTransitionService.updateStatus(order.getId(), OrderStatus.RETURN_REQUESTED);
 
         return mapToResponse(orderReturn);
     }
@@ -80,16 +79,14 @@ public class ReturnService implements IReturnService {
         // Sync with Order status
         Order order = orderReturn.getOrder();
         if (request.getStatus() == ReturnStatus.RECEIVED) {
-            order.setStatus(OrderStatus.RETURNED);
+            order = orderTransitionService.updateStatus(order.getId(), OrderStatus.RETURNED);
         } else if (request.getStatus() == ReturnStatus.REFUNDED) {
-            order.setStatus(OrderStatus.REFUNDED);
+            order = orderTransitionService.updateStatus(order.getId(), OrderStatus.REFUNDED);
         } else if (request.getStatus() == ReturnStatus.REJECTED) {
             // Revert order status if rejected? 
             // Usually, we might want to set it back to DELIVERED or a specific state.
-            order.setStatus(OrderStatus.DELIVERED);
+            order = orderTransitionService.updateStatus(order.getId(), OrderStatus.DELIVERED);
         }
-
-        orderRepository.save(order);
         orderReturn = returnRepository.save(orderReturn);
 
         return mapToResponse(orderReturn);

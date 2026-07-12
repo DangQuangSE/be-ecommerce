@@ -1,6 +1,7 @@
 package com.sport_pro_be.modules.custom_design.service;
 
 import com.sport_pro_be.exception.AppException;
+import com.sport_pro_be.exception.BadRequestException;
 import com.sport_pro_be.exception.ResourceNotFoundException;
 import com.sport_pro_be.modules.auth.domain.User;
 import com.sport_pro_be.modules.auth.repository.UserRepository;
@@ -105,6 +106,33 @@ public class CustomDesignService implements ICustomDesignService {
                 .orElseThrow(() -> new AppException(CustomDesignMessageConstant.DESIGN_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
+    @Override
+    public String uploadLogo(MultipartFile file) {
+        // Not @Transactional: this is an external Cloudinary call, never hold a DB connection during it.
+        uploadService.validateFile(file);
+        return uploadService.uploadFile(file, CustomDesignMessageConstant.LOGO_UPLOAD_FOLDER);
+    }
+
+    @Override
+    public void deleteLogo(String url) {
+        // IDOR guard: logos are uploaded before a design exists, so ownership cannot be verified
+        // via design metadata yet. Instead, scope deletion to the logo folder only — this endpoint
+        // can never be used to delete product/shop/preview assets or anything outside that folder.
+        if (url == null || url.isBlank()) {
+            throw new BadRequestException(CustomDesignMessageConstant.LOGO_URL_REQUIRED);
+        }
+        if (!isLogoAssetUrl(url)) {
+            throw new BadRequestException(CustomDesignMessageConstant.LOGO_URL_INVALID_SCOPE);
+        }
+        uploadService.deleteFile(url);
+    }
+
+    private boolean isLogoAssetUrl(String url) {
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            return false;
+        }
+        return url.contains("/" + CustomDesignMessageConstant.LOGO_UPLOAD_FOLDER + "/");
+    }
 
     // ──────────────────────────────────────────────
     // Private helpers
@@ -118,7 +146,7 @@ public class CustomDesignService implements ICustomDesignService {
         PrintingMaterial material = materialRepository.findById(request.getMaterialId())
                 .orElseThrow(() -> new AppException(CustomDesignMessageConstant.MATERIAL_NOT_FOUND, HttpStatus.NOT_FOUND));
 
-        BigDecimal totalPrintingPrice = calculatePrintingPrice(material, request.getNumTextLines(), request.getNumImages());
+        BigDecimal totalPrintingPrice = calculatePrintingPrice(request.getNumTextLines(), request.getNumImages());
 
         CustomDesign design = CustomDesign.builder()
                 .user(user)
@@ -139,17 +167,19 @@ public class CustomDesignService implements ICustomDesignService {
 
     /**
      * Formula:
-     * totalPrintingPrice = material.basePrice
+     * totalPrintingPrice = 0
      *                    + (numTextLines × PriceConfig[TEXT].unitPrice)
      *                    + (numImages    × PriceConfig[IMAGE].unitPrice)
      */
-    private BigDecimal calculatePrintingPrice(PrintingMaterial material, int numTextLines, int numImages) {
+    private BigDecimal calculatePrintingPrice(int numTextLines, int numImages) {
         BigDecimal textUnitPrice = getUnitPrice(PrintingElementType.TEXT);
         BigDecimal imageUnitPrice = getUnitPrice(PrintingElementType.IMAGE);
 
-        return material.getBasePrice()
-                .add(textUnitPrice.multiply(BigDecimal.valueOf(numTextLines)))
-                .add(imageUnitPrice.multiply(BigDecimal.valueOf(numImages)));
+        return PrintingPriceCalculator.calculate(
+                numTextLines,
+                numImages,
+                textUnitPrice,
+                imageUnitPrice);
     }
 
     private BigDecimal getUnitPrice(PrintingElementType type) {

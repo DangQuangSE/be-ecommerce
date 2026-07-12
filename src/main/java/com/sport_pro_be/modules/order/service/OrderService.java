@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +50,7 @@ public class OrderService implements IOrderService {
     private final com.sport_pro_be.modules.coupon.interfaces.ICouponService couponService;
     private final com.sport_pro_be.modules.membership.interfaces.ITierService tierService;
     private final NotificationService notificationService;
+    private final OrderTransitionService orderTransitionService;
 
     @Override
     @Transactional
@@ -217,18 +217,7 @@ public class OrderService implements IOrderService {
     @Transactional
     @Loggable(action = "UPDATE_ORDER_STATUS", module = "ORDER")
     public OrderResponse updateOrderStatus(Long orderId, OrderStatus status) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
-
-        if (status == OrderStatus.DELIVERED && order.getStatus() != OrderStatus.DELIVERED) {
-            User user = order.getUser();
-            user.setTotalSpending(user.getTotalSpending().add(order.getTotalAmount()));
-            tierService.updateUserTier(user);
-            userRepository.save(user);
-        }
-
-        order.setStatus(status);
-        orderRepository.save(order);
+        Order order = orderTransitionService.updateStatus(orderId, status);
 
         try {
             notificationService.createCustomerNotification(
@@ -249,34 +238,7 @@ public class OrderService implements IOrderService {
     @Transactional
     @Loggable(action = "CANCEL_ORDER", module = "ORDER")
     public OrderResponse cancelOrder(Long userId, Long orderId, String reason) {
-        Order order = orderRepository.findByIdAndUserId(orderId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
-
-        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PROCESSING) {
-            throw new BadRequestException("Order cannot be cancelled in its current status");
-        }
-
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setCancelReason(reason);
-
-        boolean stockWasDecremented = true;
-        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && !order.isPaymentCompleted()) {
-            stockWasDecremented = false;
-        }
-
-        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.isPaymentCompleted()) {
-            order.setRefundStatus(com.sport_pro_be.modules.order.enums.RefundStatus.PENDING);
-        }
-
-        if (stockWasDecremented) {
-            for (OrderItem item : order.getItems()) {
-                ProductVariant variant = item.getProductVariant();
-                variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
-                productVariantRepository.save(variant);
-            }
-        }
-
-        orderRepository.save(order);
+        Order order = orderTransitionService.cancel(orderId, userId, reason);
 
         String customerMessage = "Đơn hàng #" + order.getId() + " của bạn đã được hủy thành công.";
         if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.isPaymentCompleted()) {
@@ -313,48 +275,7 @@ public class OrderService implements IOrderService {
     @Override
     @Transactional
     public void fulfillOrder(Long orderId) {
-        Order order = orderRepository.findFulfillmentGraphById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException(OrderMessageConstant.ORDER_NOT_FOUND));
-
-        if (order.isPaymentCompleted()) {
-            return;
-        }
-
-        Cart cart = cartRepository.findByUserId(order.getUser().getId()).orElse(null);
-
-        for (OrderItem orderItem : order.getItems()) {
-            ProductVariant variant = orderItem.getProductVariant();
-            int newStock = variant.getStockQuantity() - orderItem.getQuantity();
-            if (newStock < 0) {
-                throw new BadRequestException(String.format(OrderMessageConstant.INSUFFICIENT_STOCK,
-                        variant.getProduct().getName(), variant.getSize()));
-            }
-            variant.setStockQuantity(newStock);
-            productVariantRepository.save(variant);
-
-            if (cart != null && cart.getItems() != null) {
-                Long orderDesignId = orderItem.getCustomDesign() != null
-                        ? orderItem.getCustomDesign().getId()
-                        : null;
-                cart.getItems().removeIf(cartItem -> {
-                    Long cartDesignId = cartItem.getCustomDesign() != null
-                            ? cartItem.getCustomDesign().getId()
-                            : null;
-                    return cartItem.getProductVariant().getId().equals(variant.getId())
-                            && Objects.equals(cartDesignId, orderDesignId)
-                            && cartItem.getQuantity().equals(orderItem.getQuantity());
-                });
-            }
-        }
-
-        if (cart != null) {
-            cartRepository.save(cart);
-        }
-
-        if (order.getCoupon() != null) {
-            com.sport_pro_be.modules.coupon.domain.Coupon coupon = order.getCoupon();
-            coupon.setUsedCount(coupon.getUsedCount() + 1);
-        }
+        orderTransitionService.recordVerifiedPayment(orderId);
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
@@ -404,6 +325,8 @@ public class OrderService implements IOrderService {
                 .paymentMethod(order.getPaymentMethod())
                 .vnpTxnRef(order.getVnpTxnRef())
                 .createdAt(order.getCreatedAt())
+                .paidAt(order.getPaidAt())
+                .deliveredAt(order.getDeliveredAt())
                 .cancelReason(order.getCancelReason())
                 .refundStatus(order.getRefundStatus())
                 .items(itemResponses)

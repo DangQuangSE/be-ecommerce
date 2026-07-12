@@ -16,5 +16,6 @@ public interface ICategoryService {
     List<CategoryTreeResponse> getCategoryTree();
     Page<CategoryResponse> getCategories(Pageable pageable, String search);
     void updateStatus(Long id, boolean isActive);
+    String uploadCategoryImage(org.springframework.web.multipart.MultipartFile file);
 }
 

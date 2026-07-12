@@ -23,6 +23,8 @@ public class OrderResponse {
     private PaymentMethod paymentMethod;
     private String vnpTxnRef;
     private LocalDateTime createdAt;
+    private LocalDateTime paidAt;
+    private LocalDateTime deliveredAt;
     private String cancelReason;
     private RefundStatus refundStatus;
     private List<OrderItemResponse> items;

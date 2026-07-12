@@ -9,6 +9,7 @@ import com.sport_pro_be.modules.category.repository.CategoryRepository;
 import com.sport_pro_be.common.SlugUtils;
 import com.sport_pro_be.exception.BadRequestException;
 import com.sport_pro_be.exception.ResourceNotFoundException;
+import com.sport_pro_be.modules.upload.interfaces.IUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements ICategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final IUploadService uploadService;
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -110,6 +112,11 @@ public class CategoryServiceImpl implements ICategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException(String.format(CategoryConstant.CATEGORY_NOT_FOUND_ID, id)));
         category.setActive(isActive);
         categoryRepository.save(category);
+    }
+
+    @Override
+    public String uploadCategoryImage(org.springframework.web.multipart.MultipartFile file) {
+        return uploadService.uploadFile(file, "categories");
     }
 
     private void validateParentId(Long parentId, Long currentId) {
