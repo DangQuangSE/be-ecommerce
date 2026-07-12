@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import com.sport_pro_be.modules.analytics.dto.RevenueSummaryResponse;
 
 @RestController
 @RequestMapping("/api/v1/admin/analytics")
@@ -74,5 +75,13 @@ public class AnalyticsController {
     public ApiResponse<com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse> getDashboardSummary() {
         com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse data = analyticsService.getDashboardSummary();
         return ApiResponse.of("Get dashboard summary successfully", data);
+    }
+
+    @GetMapping("/revenue-summary")
+    public ApiResponse<RevenueSummaryResponse> getRevenueSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ApiResponse.of(AnalyticsMessageConstant.GET_REVENUE_SUCCESS,
+                analyticsService.getRevenueSummary(startDate, endDate));
     }
 }

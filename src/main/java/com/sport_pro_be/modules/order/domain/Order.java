@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +47,24 @@ public class Order extends AbstractAuditingEntity {
     @Builder.Default
     private boolean paymentCompleted = false;
 
+    @Setter(AccessLevel.NONE)
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Setter(AccessLevel.NONE)
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @Setter(AccessLevel.NONE)
+    @Column(name = "spending_credited", nullable = false)
+    @Builder.Default
+    private boolean spendingCredited = false;
+
+    @Setter(AccessLevel.NONE)
+    @Column(name = "spending_reversed", nullable = false)
+    @Builder.Default
+    private boolean spendingReversed = false;
+
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
@@ -80,4 +99,18 @@ public class Order extends AbstractAuditingEntity {
     @org.hibernate.annotations.BatchSize(size = 20)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
+
+    public void recordPayment(LocalDateTime occurredAt) {
+        if (!paymentCompleted) {
+            paymentCompleted = true;
+            paidAt = occurredAt;
+        }
+    }
+
+    public void recordDelivery(LocalDateTime occurredAt) {
+        if (deliveredAt == null) deliveredAt = occurredAt;
+    }
+
+    public void markSpendingCredited() { spendingCredited = true; }
+    public void markSpendingReversed() { spendingReversed = true; }
 }

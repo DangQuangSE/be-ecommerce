@@ -19,6 +19,19 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Clock;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import com.sport_pro_be.exception.BadRequestException;
+import com.sport_pro_be.modules.analytics.dto.DailyRevenueProjection;
+import com.sport_pro_be.modules.analytics.dto.RevenueSeriesPointResponse;
+import com.sport_pro_be.modules.analytics.dto.RevenueSummaryResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +41,67 @@ public class AnalyticsService implements IAnalyticsService {
     private final OrderItemRepository orderItemRepository;
     private final CustomDesignRepository customDesignRepository;
     private final com.sport_pro_be.modules.auth.repository.UserRepository userRepository;
+    private final ZoneId businessZoneId;
+    private final Clock clock;
+
+    @Override
+    public RevenueSummaryResponse getRevenueSummary(LocalDate startDate, LocalDate endDate) {
+        validateRange(startDate, endDate);
+        long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        LocalDate previousEnd = startDate.minusDays(1);
+        LocalDate previousStart = previousEnd.minusDays(days - 1);
+        List<DailyRevenueProjection> current = queryRange(startDate, endDate);
+        List<DailyRevenueProjection> previous = queryRange(previousStart, previousEnd);
+        BigDecimal revenue = sumRevenue(current);
+        long count = current.stream().mapToLong(DailyRevenueProjection::getOrderCount).sum();
+        BigDecimal previousRevenue = sumRevenue(previous);
+        BigDecimal average = count == 0 ? BigDecimal.ZERO : revenue.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP);
+        BigDecimal growth = previousRevenue.signum() == 0 ? null
+                : revenue.subtract(previousRevenue).multiply(BigDecimal.valueOf(100))
+                    .divide(previousRevenue, 2, RoundingMode.HALF_UP);
+        String grouping = days <= 31 ? "DAILY" : days <= 180 ? "WEEKLY" : "MONTHLY";
+        return new RevenueSummaryResponse(startDate, endDate, revenue, count, average,
+                previousRevenue, growth, grouping, buildPoints(startDate, endDate, current, grouping));
+    }
+
+    private List<DailyRevenueProjection> queryRange(LocalDate start, LocalDate end) {
+        LocalDateTime startUtc = LocalDateTime.ofInstant(start.atStartOfDay(businessZoneId).toInstant(), ZoneOffset.UTC);
+        LocalDateTime endUtc = LocalDateTime.ofInstant(end.plusDays(1).atStartOfDay(businessZoneId).toInstant(), ZoneOffset.UTC);
+        return orderRepository.aggregateRealizedRevenue(startUtc, endUtc, businessZoneId.getId());
+    }
+
+    private List<RevenueSeriesPointResponse> buildPoints(LocalDate start, LocalDate end,
+            List<DailyRevenueProjection> rows, String grouping) {
+        Map<LocalDate, DailyRevenueProjection> byDate = new HashMap<>();
+        rows.forEach(row -> byDate.put(row.getRevenueDate(), row));
+        Map<LocalDate, MutableBucket> buckets = new LinkedHashMap<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            LocalDate key = switch (grouping) {
+                case "WEEKLY" -> date.with(java.time.DayOfWeek.MONDAY).isBefore(start) ? start : date.with(java.time.DayOfWeek.MONDAY);
+                case "MONTHLY" -> date.with(TemporalAdjusters.firstDayOfMonth()).isBefore(start) ? start : date.with(TemporalAdjusters.firstDayOfMonth());
+                default -> date;
+            };
+            MutableBucket bucket = buckets.computeIfAbsent(key, ignored -> new MutableBucket(key));
+            bucket.end = date;
+            DailyRevenueProjection row = byDate.get(date);
+            if (row != null) { bucket.revenue = bucket.revenue.add(row.getRevenue()); bucket.count += row.getOrderCount(); }
+        }
+        return buckets.values().stream().map(b -> new RevenueSeriesPointResponse(b.start, b.end, b.revenue, b.count)).toList();
+    }
+
+    private BigDecimal sumRevenue(List<DailyRevenueProjection> rows) {
+        return rows.stream().map(DailyRevenueProjection::getRevenue).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void validateRange(LocalDate start, LocalDate end) {
+        if (start == null || end == null || start.isAfter(end)) throw new BadRequestException("Invalid date range");
+        if (ChronoUnit.DAYS.between(start, end) + 1 > 366L * 5) throw new BadRequestException("Date range cannot exceed 5 years");
+    }
+
+    private static final class MutableBucket {
+        private final LocalDate start; private LocalDate end; private BigDecimal revenue = BigDecimal.ZERO; private long count;
+        private MutableBucket(LocalDate start) { this.start = start; this.end = start; }
+    }
 
     @Override
     public List<RevenueReportResponse> getDailyRevenue(LocalDate start, LocalDate end) {
@@ -68,17 +142,18 @@ public class AnalyticsService implements IAnalyticsService {
 
     @Override
     public com.sport_pro_be.modules.analytics.dto.DashboardSummaryResponse getDashboardSummary() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now(clock.withZone(businessZoneId));
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         LocalDateTime startOfThisWeek = now.minusDays(7);
         LocalDateTime startOfLastWeek = startOfThisWeek.minusDays(7);
 
         // This week stats
-        java.math.BigDecimal thisWeekRevenue = orderRepository.calculateTotalRevenue(startOfThisWeek, now);
+        java.math.BigDecimal thisWeekRevenue = getRevenueSummary(today.minusDays(6), today).realizedRevenue();
         long thisWeekOrders = orderRepository.countOrdersBetween(startOfThisWeek, now);
         long thisWeekNewCustomers = userRepository.countUsersCreatedBetween(startOfThisWeek, now);
 
         // Last week stats
-        java.math.BigDecimal lastWeekRevenue = orderRepository.calculateTotalRevenue(startOfLastWeek, startOfThisWeek);
+        java.math.BigDecimal lastWeekRevenue = getRevenueSummary(today.minusDays(13), today.minusDays(7)).realizedRevenue();
         long lastWeekOrders = orderRepository.countOrdersBetween(startOfLastWeek, startOfThisWeek);
         long lastWeekNewCustomers = userRepository.countUsersCreatedBetween(startOfLastWeek, startOfThisWeek);
 
