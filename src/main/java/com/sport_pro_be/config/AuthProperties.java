@@ -49,4 +49,6 @@ public class AuthProperties {
 
     @NotBlank
     private String mailFrom;
+
+    private String googleClientId;
 }

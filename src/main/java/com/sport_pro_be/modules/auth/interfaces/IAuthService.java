@@ -13,5 +13,6 @@ public interface IAuthService {
     void logout(String refreshToken);
     void verifyOtp(OtpVerifyRequest request);
     void resendOtp(String email);
+    AuthTokenPairResponse loginWithGoogle(String idToken);
 }
 

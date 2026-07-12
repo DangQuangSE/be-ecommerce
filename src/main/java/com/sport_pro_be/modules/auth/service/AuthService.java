@@ -22,6 +22,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.sport_pro_be.modules.auth.enums.AuthProvider;
+import java.util.Collections;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -102,6 +109,65 @@ public class AuthService implements IAuthService {
             throw new UnauthorizedException(INVALID_CREDENTIALS);
         }
         return issueTokenPair(user);
+    }
+
+    @Override
+    @Transactional
+    @Loggable(action = "LOGIN_GOOGLE", module = "AUTH")
+    public AuthTokenPairResponse loginWithGoogle(String idTokenString) {
+        if (idTokenString == null || idTokenString.isBlank()) {
+            throw new BadRequestException("ID token is required");
+        }
+
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(authProperties.getGoogleClientId()))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                throw new UnauthorizedException("Invalid Google ID token");
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = normalizeEmail(payload.getEmail());
+            
+            User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+            
+            if (user != null) {
+                if (!user.isActive()) {
+                    throw new UnauthorizedException(ACCOUNT_DELETED);
+                }
+                // If it's a local account, optionally link it (set authProvider = GOOGLE or just proceed)
+                // For now, we just let them login
+                if (user.getAuthProvider() == AuthProvider.LOCAL) {
+                    user.setAuthProvider(AuthProvider.GOOGLE);
+                    user.setEmailVerified(true);
+                    userRepository.save(user);
+                }
+            } else {
+                user = new User();
+                user.setEmail(email);
+                user.setEmailVerified(true);
+                user.setAuthProvider(AuthProvider.GOOGLE);
+                user.setPasswordHash(null);
+                
+                String familyName = (String) payload.get("family_name");
+                String givenName = (String) payload.get("given_name");
+                user.setFirstName(givenName);
+                user.setLastName(familyName);
+                
+                String pictureUrl = (String) payload.get("picture");
+                user.setAvatar(pictureUrl);
+                
+                userRepository.save(user);
+            }
+
+            return issueTokenPair(user);
+        } catch (Exception e) {
+            throw new UnauthorizedException("Failed to verify Google ID token");
+        }
     }
 
     @Override

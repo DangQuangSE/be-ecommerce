@@ -2,6 +2,7 @@ package com.sport_pro_be.modules.auth.domain;
 
 import com.sport_pro_be.modules.auth.enums.Role;
 import com.sport_pro_be.modules.auth.enums.UserTier;
+import com.sport_pro_be.modules.auth.enums.AuthProvider;
 import com.sport_pro_be.common.AbstractAuditingEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,8 +30,12 @@ public class User extends AbstractAuditingEntity {
     private String lastName;
     private String avatar;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @Column(nullable = false)
     private boolean emailVerified;

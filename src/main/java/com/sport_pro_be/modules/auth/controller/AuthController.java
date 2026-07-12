@@ -4,6 +4,7 @@ import com.sport_pro_be.modules.auth.dto.AuthTokenPairResponse;
 import com.sport_pro_be.modules.auth.dto.LoginRequest;
 import com.sport_pro_be.modules.auth.dto.LoginSuccessResponse;
 import com.sport_pro_be.modules.auth.dto.OtpVerifyRequest;
+import com.sport_pro_be.modules.auth.dto.request.GoogleLoginRequest;
 import com.sport_pro_be.modules.auth.dto.RegisterRequest;
 import com.sport_pro_be.modules.auth.dto.ResendOtpRequest;
 import com.sport_pro_be.modules.auth.domain.User;
@@ -52,6 +53,14 @@ public class AuthController {
     @RateLimit(requests = 5, periodInSeconds = 60)
     public ApiResponse<LoginSuccessResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         AuthTokenPairResponse tokenPair = authService.login(request);
+        response.addHeader(HttpHeaders.SET_COOKIE, buildRefreshTokenCookie(tokenPair.refreshToken()).toString());
+        return ApiResponse.of(LOGIN_SUCCESS, toLoginSuccessResponse(tokenPair));
+    }
+
+    @PostMapping("/google")
+    @RateLimit(requests = 5, periodInSeconds = 60)
+    public ApiResponse<LoginSuccessResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request, HttpServletResponse response) {
+        AuthTokenPairResponse tokenPair = authService.loginWithGoogle(request.getIdToken());
         response.addHeader(HttpHeaders.SET_COOKIE, buildRefreshTokenCookie(tokenPair.refreshToken()).toString());
         return ApiResponse.of(LOGIN_SUCCESS, toLoginSuccessResponse(tokenPair));
     }
