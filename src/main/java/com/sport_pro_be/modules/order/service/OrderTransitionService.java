@@ -16,7 +16,10 @@ import com.sport_pro_be.modules.order.domain.OrderItem;
 import com.sport_pro_be.modules.product.domain.ProductVariant;
 import com.sport_pro_be.modules.product.repository.ProductVariantRepository;
 import com.sport_pro_be.modules.order.enums.RefundStatus;
+import com.sport_pro_be.modules.notification.service.NotificationService;
+import com.sport_pro_be.modules.notification.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,7 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderTransitionService {
 
     private final OrderRepository orderRepository;
@@ -35,6 +39,7 @@ public class OrderTransitionService {
     private final Clock clock;
     private final CartRepository cartRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Order recordVerifiedPayment(Long orderId) {
@@ -45,6 +50,18 @@ public class OrderTransitionService {
         if (!order.isPaymentCompleted()) {
             fulfillOnlineOrder(order);
             order.recordPayment(nowUtc());
+            
+            try {
+                notificationService.createAdminNotification(
+                        "Đơn hàng mới: #" + order.getId(),
+                        "Đơn hàng mới được đặt bởi " + (order.getCustomerName() != null ? order.getCustomerName() : order.getUser().getFullName()),
+                        NotificationType.NEW_ORDER,
+                        order.getId(),
+                        order.getCustomerName() != null ? order.getCustomerName() : order.getUser().getFullName()
+                );
+            } catch (Exception e) {
+                log.error("Failed to create admin notification for verified online order: {}", order.getId(), e);
+            }
         }
         return orderRepository.save(order);
     }

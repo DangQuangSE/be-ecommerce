@@ -166,18 +166,18 @@ public class OrderService implements IOrderService {
         if (!deferFulfillment) {
             cart.getItems().removeAll(itemsToOrder);
             cartRepository.save(cart);
-        }
 
-        try {
-            notificationService.createAdminNotification(
-                    "Đơn hàng mới: #" + order.getId(),
-                    "Đơn hàng mới được đặt bởi " + (order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()),
-                    NotificationType.NEW_ORDER,
-                    order.getId(),
-                    order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()
-            );
-        } catch (Exception e) {
-            log.error("Failed to create admin notification for order: {}", order.getId(), e);
+            try {
+                notificationService.createAdminNotification(
+                        "Đơn hàng mới: #" + order.getId(),
+                        "Đơn hàng mới được đặt bởi " + (order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()),
+                        NotificationType.NEW_ORDER,
+                        order.getId(),
+                        order.getCustomerName() != null ? order.getCustomerName() : user.getFullName()
+                );
+            } catch (Exception e) {
+                log.error("Failed to create admin notification for order: {}", order.getId(), e);
+            }
         }
 
         return mapToOrderResponse(order);
